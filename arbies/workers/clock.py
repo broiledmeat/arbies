@@ -27,9 +27,9 @@ class ClockWorker(Worker):
         drawing.aligned_text(draw, (self.size[0] / 2, 0), now.strftime(self._date_format).upper(), 'center', font=font)
         drawing.aligned_text(draw, (self.size[0] / 2, 16), now.strftime(self._time_format), 'center', font=font)
 
-        solar_day = adt.get_solar_day_info(self._coords)
+        sun_position = adt.get_sun_position_info(self._coords)
 
-        icon = drawing.get_icon('sun' if solar_day.sunrise <= now < solar_day.sunset else 'moon')
+        icon = drawing.get_icon('sun' if sun_position.sunrise <= now < sun_position.sunset else 'moon')
         image.paste(icon, (int((self.size[0] / 2) - (icon.width / 2)), 30))
 
         del draw
