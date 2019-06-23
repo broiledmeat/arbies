@@ -1,6 +1,6 @@
 from PIL import Image
 from threading import Timer
-from typing import Optional, Tuple
+from typing import Optional, Dict, Tuple
 from arbies.manager import Manager
 
 
@@ -24,4 +24,12 @@ class Worker:
     def serve(self, image: Image.Image):
         self.manager.update_worker_image(self, image)
 
+    @classmethod
+    def from_config(cls, manager: Manager, config: Dict) -> 'Worker':
+        worker = cls(manager)
+
+        worker.size = config.get('size', worker.size)
+        worker.position = config.get('position', worker.position)
+
+        return worker
 
