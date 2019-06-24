@@ -14,6 +14,8 @@ class DateTimeWorker(Worker):
         self.loop_interval = 0.5 * 60
         self.format: Optional[str] = None
         self.font_size: int = 16
+        self.halign: str = 'left'
+        self.valign: str = 'top'
 
     def render(self):
         image = Image.new('1', self.size, 1)
@@ -23,7 +25,7 @@ class DateTimeWorker(Worker):
         now = adt.now_tz()
 
         text = now.strftime(self.format) if self.format is not None else str(now)
-        drawing.aligned_text(draw, text, rect=self.size, halign='center', font=font)
+        drawing.aligned_text(draw, text, rect=self.size, halign=self.halign, valign=self.valign, font=font)
 
         del draw
         self.serve(image)
@@ -35,5 +37,7 @@ class DateTimeWorker(Worker):
 
         worker.format = config.get('format', worker.format)
         worker.font_size = config.get('font_size', worker.font_size)
+        worker.halign = config.get('horizontal_alignment', worker.halign)
+        worker.valign = config.get('vertical_alignment', worker.valign)
 
         return worker
