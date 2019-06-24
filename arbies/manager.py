@@ -43,8 +43,8 @@ class Manager:
         manager._size = display_config.get('size', manager._size)
         manager._refresh_interval = display_config.get('refresh_interval', manager._refresh_interval)
 
-        for widget_config in config.get('widgets', []):
-            name = widget_config.get('name', None)
+        for worker_config in config.get('workers', []):
+            name = worker_config.get('name', None)
 
             if name is None:
                 continue
@@ -52,7 +52,7 @@ class Manager:
             module = importlib.import_module(f'arbies.workers.{name.lower()}')
             class_: Worker = getattr(module, f'{name}Worker')
 
-            worker = class_.from_config(manager, widget_config)
+            worker = class_.from_config(manager, worker_config)
 
             manager.workers.append(worker)
 
