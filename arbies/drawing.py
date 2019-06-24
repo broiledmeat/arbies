@@ -45,17 +45,34 @@ def get_icon(name: str, size: Optional[Tuple[int, int]] = None) -> ImageFont.Ima
 
 
 def aligned_text(draw: ImageDraw.ImageDraw,
-                 position: Tuple[float, float],
                  text: str,
-                 alignment: str,
+                 position: Optional[Tuple[float, float]] = None,
+                 rect: Optional[Tuple[float, float]] = None,
+                 halign: str = 'left',
+                 valign: str = 'top',
                  font: ImageFont.ImageFont = None):
-    if alignment == 'left':
-        draw.text(position, text, font=font)
-    elif alignment == 'center':
-        size = draw.textsize(text, font=font)
-        draw.text((position[0] - (size[0] / 2), position[1]), text, font=font)
-    elif alignment == 'right':
-        size = draw.textsize(text, font=font)
-        draw.text((position[0] - size[0], position[1]), text, font=font)
+    assert(position is not None or rect is not None)
+
+    x, y = position or (0, 0)
+    w, h = rect or (0, 0)
+    tw, th = draw.textsize(text, font=font)
+
+    if halign == 'left':
+        pass
+    elif halign == 'center':
+        x = (w / 2) - (tw / 2)
+    elif halign == 'right':
+        x = w - tw
     else:
-        raise ValueError(alignment)
+        raise ValueError(halign)
+
+    if valign == 'top':
+        pass
+    elif valign == 'middle':
+        y = (h / 2) - (th / 2)
+    elif valign == 'bottom':
+        y = h - th
+    else:
+        raise ValueError(valign)
+
+    draw.text((x, y), text, font=font)
