@@ -1,0 +1,34 @@
+from __future__ import annotations
+from PIL import Image
+from typing import Optional
+from arbies.manager import Manager, ConfigDict
+from arbies.workers import Worker
+
+
+class ImageWorker(Worker):
+    def __init__(self, manager: Manager):
+        super().__init__(manager)
+
+        self.loop_interval = 0.5 * 60
+        self.path: Optional[str] = None
+
+    def render(self):
+        image = Image.new('1', self.size, 1)
+
+        thumb: Image.Image = Image.open(self.path)
+        thumb.thumbnail(self.size, Image.LANCZOS)
+
+        image.paste(thumb,
+                    (int((image.width / 2) - (thumb.width / 2)),
+                     int((image.height / 2) - (thumb.height / 2))))
+
+        self.serve(image)
+
+    @classmethod
+    def from_config(cls, manager: Manager, config: ConfigDict) -> ImageWorker:
+        # noinspection PyTypeChecker
+        worker: ImageWorker = super().from_config(manager, config)
+
+        worker.path = config.get('path', worker.path)
+
+        return worker
