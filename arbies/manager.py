@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import importlib
 from PIL import Image
@@ -33,7 +34,7 @@ class Manager:
         self._update_worker_images[worker] = image
 
     @classmethod
-    def from_config(cls, config: ConfigDict) -> 'Manager':
+    def from_config(cls, config: ConfigDict) -> Manager:
         from arbies.workers import Worker
 
         manager = cls()

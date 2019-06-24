@@ -1,3 +1,4 @@
+from __future__ import annotations
 from PIL import Image
 from threading import Timer
 from typing import Optional, Tuple
@@ -25,7 +26,7 @@ class Worker:
         self.manager.update_worker_image(self, image)
 
     @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> 'Worker':
+    def from_config(cls, manager: Manager, config: ConfigDict) -> Worker:
         worker = cls(manager)
 
         worker.size = config.get('size', worker.size)

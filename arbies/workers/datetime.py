@@ -1,3 +1,4 @@
+from __future__ import annotations
 from PIL import Image, ImageDraw
 from typing import Optional
 from arbies.manager import Manager, ConfigDict
@@ -28,7 +29,8 @@ class DateTimeWorker(Worker):
         self.serve(image)
 
     @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> 'DateTimeWorker':
+    def from_config(cls, manager: Manager, config: ConfigDict) -> DateTimeWorker:
+        # noinspection PyTypeChecker
         worker: DateTimeWorker = super().from_config(manager, config)
 
         worker.format = config.get('format', worker.format)
