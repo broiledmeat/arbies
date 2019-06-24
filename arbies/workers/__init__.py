@@ -1,7 +1,7 @@
 from PIL import Image
 from threading import Timer
-from typing import Optional, Dict, Tuple
-from arbies.manager import Manager
+from typing import Optional, Tuple
+from arbies.manager import Manager, ConfigDict
 
 
 class Worker:
@@ -25,7 +25,7 @@ class Worker:
         self.manager.update_worker_image(self, image)
 
     @classmethod
-    def from_config(cls, manager: Manager, config: Dict) -> 'Worker':
+    def from_config(cls, manager: Manager, config: ConfigDict) -> 'Worker':
         worker = cls(manager)
 
         worker.size = config.get('size', worker.size)

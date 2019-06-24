@@ -1,7 +1,9 @@
 import os
 import importlib
 from PIL import Image
-from typing import Dict, Tuple, List
+from typing import Union, Dict, Tuple, List
+
+ConfigDict = Dict[str, Union[str, int, float, List, 'ConfigDict']]
 
 
 class Manager:
@@ -9,6 +11,7 @@ class Manager:
         from arbies.workers import Worker
 
         self.workers: List[Worker] = []
+        self.config: ConfigDict = {}
 
         self._size: Tuple[int, int] = (640, 384)
         self._image = Image.new('1', self._size, 1)
@@ -30,12 +33,12 @@ class Manager:
         self._update_worker_images[worker] = image
 
     @classmethod
-    def from_config(cls, config: Dict) -> 'Manager':
+    def from_config(cls, config: ConfigDict) -> 'Manager':
         from arbies.workers import Worker
 
         manager = cls()
 
-        display_config: Dict = config.get('display', {})
+        display_config: ConfigDict = config.get('display', {})
         manager._size = display_config.get('size', manager._size)
         manager._refresh_interval = display_config.get('refresh_interval', manager._refresh_interval)
 
@@ -51,5 +54,7 @@ class Manager:
             worker = class_.from_config(manager, widget_config)
 
             manager.workers.append(worker)
+
+        manager.config = config
 
         return manager
