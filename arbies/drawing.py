@@ -60,18 +60,18 @@ def aligned_text(draw: ImageDraw.ImageDraw,
     if halign == 'left':
         pass
     elif halign == 'center':
-        x = (w / 2) - (tw / 2)
+        x += (w / 2) - (tw / 2)
     elif halign == 'right':
-        x = w - tw
+        x += w - tw
     else:
         raise ValueError(halign)
 
     if valign == 'top':
         pass
     elif valign == 'middle':
-        y = (h / 2) - (th / 2)
+        y += (h / 2) - (th / 2)
     elif valign == 'bottom':
-        y = h - th
+        y += h - th
     else:
         raise ValueError(valign)
 
