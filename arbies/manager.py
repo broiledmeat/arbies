@@ -1,8 +1,9 @@
 from __future__ import annotations
 import os
 import importlib
+from threading import Timer
 from PIL import Image
-from typing import Union, Dict, Tuple, List
+from typing import Union, Optional, Dict, Tuple, List
 
 ConfigDict = Dict[str, Union[str, int, float, List, 'ConfigDict']]
 
@@ -18,7 +19,25 @@ class Manager:
         self._image = Image.new('1', self._size, 1)
 
         self._refresh_interval: int = 60
+        self._loop_timer: Optional[Timer] = None
         self._update_worker_images: Dict[Worker, Image.Image] = {}
+
+    def loop(self):
+        for worker in self.workers:
+            worker.loop()
+
+        self._render_loop()
+
+    def _render_loop(self):
+        for worker, image in list(self._update_worker_images.items()):
+            self._image.paste(image, worker.position)
+            del self._update_worker_images[worker]
+
+        path = os.path.abspath(f'./out.png')
+        self._image.save(path, 'PNG')
+
+        self._loop_timer = Timer(self._refresh_interval, self._render_loop)
+        self._loop_timer.start()
 
     def render_once(self):
         for worker in self.workers:
