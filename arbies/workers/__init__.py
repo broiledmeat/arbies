@@ -8,8 +8,8 @@ from arbies.manager import Manager, ConfigDict
 class Worker:
     def __init__(self, manager: Manager):
         self.manager: Manager = manager
-        self.position: Tuple[int, int] = (0, 0)  # TODO: Load this from config
-        self.size: Tuple[int, int] = (100, 100)  # TODO: Load this from config
+        self.position: Tuple[int, int] = (0, 0)
+        self.size: Tuple[int, int] = (100, 100)
 
         self.loop_interval: Optional[float] = None
         self._loop_timer: Optional[Timer] = None
