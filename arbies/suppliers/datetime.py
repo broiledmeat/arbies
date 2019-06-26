@@ -24,8 +24,7 @@ def now_tz(tz: Optional[tzinfo] = None) -> datetime:
 def get_sun_position_info(coords: Tuple[float, float]) -> SunPositionInfo:
     now = now_tz()
 
-    if coords in _solar_day_info_cache and (now - _solar_day_info_cache[coords][0]).days < 1:
-        # TODO: This is expiring when the data is a day old. It should expire at midnight.
+    if coords in _solar_day_info_cache and now.date() == _solar_day_info_cache[coords][0].date():
         return _solar_day_info_cache[coords][1]
 
     response = requests.get(_sunrise_uri.format(*coords))
