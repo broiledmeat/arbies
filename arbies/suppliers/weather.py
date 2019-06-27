@@ -28,7 +28,7 @@ def get_current_period(office: str, grid: Tuple[int, int]) -> WeatherPeriod:
     now = now_tz()
     key = (office, grid[0], grid[1])
 
-    if key in _weather_period_cache and (now - _weather_period_cache[key][0]).total_seconds() < 30 * 60 * 60:
+    if key in _weather_period_cache and (now - _weather_period_cache[key][0]).total_seconds() < 30 * 60:
         return _weather_period_cache[key][1]
 
     # TODO: This is *way* not safe.
