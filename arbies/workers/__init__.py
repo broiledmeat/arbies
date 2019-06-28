@@ -1,7 +1,8 @@
 from __future__ import annotations
-from PIL import Image
+import time
 from threading import Timer
 from typing import Optional, Tuple
+from PIL import Image
 from arbies.manager import Manager, ConfigDict
 
 
@@ -15,8 +16,17 @@ class Worker:
         self._loop_timer: Optional[Timer] = None
 
     def loop(self):
+        if self.loop_interval is None:
+            self.render()
+            return
+
+        start_time = time.time()
+
         self.render()
-        self._loop_timer = Timer(self.loop_interval, self.loop)
+
+        interval = self.loop_interval - ((time.time() - start_time) % self.loop_interval)
+
+        self._loop_timer = Timer(interval, self.loop)
         self._loop_timer.start()
 
     def render(self):
