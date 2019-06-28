@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import importlib
-from threading import Timer
+import time
 from PIL import Image
 from typing import Union, Optional, Dict, Tuple, List
 
@@ -18,8 +18,6 @@ class Manager:
         self._size: Tuple[int, int] = (640, 384)
         self._image = Image.new('1', self._size, 1)
 
-        self._refresh_interval: int = 60
-        self._loop_timer: Optional[Timer] = None
         self._update_worker_images: Dict[Worker, Image.Image] = {}
 
     def loop(self):
@@ -29,15 +27,22 @@ class Manager:
         self._render_loop()
 
     def _render_loop(self):
-        for worker, image in list(self._update_worker_images.items()):
-            self._image.paste(image, worker.position)
-            del self._update_worker_images[worker]
+        while True:
+            if len(self._update_worker_images) == 0:
+                time.sleep(1)
+                continue
 
-        path = os.path.abspath(f'./out.png')
-        self._image.save(path, 'PNG')
+            for worker, image in list(self._update_worker_images.items()):
+                self._image.paste(image, worker.position)
+                del self._update_worker_images[worker]
 
-        self._loop_timer = Timer(self._refresh_interval, self._render_loop)
-        self._loop_timer.start()
+            time.sleep(3)
+
+            if len(self._update_worker_images) > 0:
+                continue
+
+            path = os.path.abspath(f'./out.png')
+            self._image.save(path, 'PNG')
 
     def render_once(self):
         for worker in self.workers:
@@ -60,7 +65,6 @@ class Manager:
 
         display_config: ConfigDict = config.get('display', {})
         manager._size = display_config.get('size', manager._size)
-        manager._refresh_interval = display_config.get('refresh_interval', manager._refresh_interval)
 
         for worker_config in config.get('workers', []):
             name = worker_config.get('name', None)
