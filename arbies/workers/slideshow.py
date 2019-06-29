@@ -29,7 +29,7 @@ class SlideShowWorker(Worker):
         image = Image.new('1', self.size, 1)
 
         path = self._image_paths[self._image_index]
-        print(path)
+
         thumb: Image.Image = Image.open(path)
         thumb.thumbnail(self.size, Image.LANCZOS)
 
