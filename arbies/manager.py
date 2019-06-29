@@ -1,19 +1,21 @@
 from __future__ import annotations
-import os
+from datetime import datetime
 import importlib
 import time
 from PIL import Image
-from typing import Union, Optional, Dict, Tuple, List
+from typing import Union, Dict, Tuple, List
 
 ConfigDict = Dict[str, Union[str, int, float, List, 'ConfigDict']]
 
 
 class Manager:
     def __init__(self):
+        from arbies.trays import Tray
         from arbies.workers import Worker
 
-        self.workers: List[Worker] = []
         self.config: ConfigDict = {}
+        self.trays: List[Tray] = []
+        self.workers: List[Worker] = []
 
         self._size: Tuple[int, int] = (640, 384)
         self._image = Image.new('1', self._size, 1)
@@ -41,8 +43,9 @@ class Manager:
             if len(self._update_worker_images) > 0:
                 continue
 
-            path = os.path.abspath(f'./out.png')
-            self._image.save(path, 'PNG')
+            for tray in self.trays:
+                print(f'[{datetime.now()}] Serving {tray.__class__.__name__}')
+                tray.serve(self._image)
 
     def render_once(self):
         for worker in self.workers:
@@ -51,14 +54,16 @@ class Manager:
         for worker, image in self._update_worker_images.items():
             self._image.paste(image, worker.position)
 
-        path = os.path.abspath(f'./out.png')
-        self._image.save(path, 'PNG')
+        for tray in self.trays:
+            tray.serve(self._image)
 
     def update_worker_image(self, worker, image: Image.Image):
+        print(f'[{datetime.now()}] Updating {worker.__class__.__name__}')
         self._update_worker_images[worker] = image
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Manager:
+        from arbies.trays import Tray
         from arbies.workers import Worker
 
         manager = cls()
@@ -66,18 +71,20 @@ class Manager:
         display_config: ConfigDict = config.get('display', {})
         manager._size = display_config.get('size', manager._size)
 
-        for worker_config in config.get('workers', []):
-            name = worker_config.get('name', None)
+        for package_name, type_, manager_list in (('trays', Tray, manager.trays),
+                                                  ('workers', Worker, manager.workers)):
+            for item_config in config.get(package_name, []):
+                name = item_config.get('name', None)
 
-            if name is None:
-                continue
+                if name is None:
+                    raise ValueError(config)
 
-            module = importlib.import_module(f'arbies.workers.{name.lower()}')
-            class_: Worker = getattr(module, f'{name}Worker')
+                module = importlib.import_module(f'arbies.{package_name}.{name.lower()}')
+                class_ = getattr(module, f'{name}{type_.__name__}')
 
-            worker = class_.from_config(manager, worker_config)
+                instance = class_.from_config(manager, item_config)
 
-            manager.workers.append(worker)
+                manager_list.append(instance)
 
         manager.config = config
 
