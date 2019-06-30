@@ -81,9 +81,6 @@ class Device:
         self._send_command(self._DATA_START_TRANSMISSION_1)
         for i in range((self._config.width // 4 * self._config.height) * 4):
             self._send_data(0x33)
-        # for i in range(0, self._config.width // 4 * self._config.height):
-        #     for j in range(0, 4):
-        #         self._send_data(0x33)
         self._send_command(self._DISPLAY_REFRESH)
         self._wait_until_idle()
 
@@ -136,20 +133,23 @@ class Device:
         pixels = image.load()
 
         for y in range(height):
-            for x in range(width):
-                if pixels[x, y] == 0:  # black
-                    buffer[(x + y * width) // 4] &= ~(0xC0 >> (x % 4 * 2))
-                else:  # white
-                    buffer[(x + y * width) // 4] |= 0xC0 >> (x % 4 * 2)
+            for x in range(0, width, 4):
+                i = (x + y * width) // 4
+                if pixels[x, y] != 0:
+                    buffer[i] |= 0xc0  # 11000000
+                if pixels[x + 1, y] != 0:
+                    buffer[i] |= 0x30  # 00110000
+                if pixels[x + 2, y] != 0:
+                    buffer[i] |= 0x0c  # 00001100
+                if pixels[x + 3, y] != 0:
+                    buffer[i] |= 0x03  # 00000011
 
         return buffer
 
     def _wait_until_idle(self):
-        print("e-Paper busy")
         while self._digital_read(self._config.busy_pin) == 0:
             self._delay_ms(100)
-        print("e-Paper busy release")
-    
+
     def _send_command(self, command: int):
         self._digital_write(self._config.dc_pin, GPIO.LOW)
         self._spi_writebyte([command])
