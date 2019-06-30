@@ -152,23 +152,23 @@ class Device:
 
     def _send_command(self, command: int):
         self._digital_write(self._config.dc_pin, GPIO.LOW)
-        self._spi_writebyte([command])
+        self._spi.writebytes([command])
 
     def _send_data(self, data: int):
         self._digital_write(self._config.dc_pin, GPIO.HIGH)
-        self._spi_writebyte([data])
+        self._spi.writebytes([data])
 
-    def _digital_write(self, pin: int, value: int):
+    @staticmethod
+    def _digital_write(pin: int, value: int):
         GPIO.output(pin, value)
 
-    def _digital_read(self, pin: int):
+    @staticmethod
+    def _digital_read(pin: int):
         return GPIO.input(pin)
 
-    def _delay_ms(self, delay: float):
+    @staticmethod
+    def _delay_ms(delay: float):
         time.sleep(delay / 1000.0)
-
-    def _spi_writebyte(self, data: List[int]):
-        self._spi.writebytes(data)
 
     def _module_init(self):
         GPIO.setmode(GPIO.BCM)
