@@ -29,23 +29,29 @@ class Manager:
         self._render_loop()
 
     def _render_loop(self):
-        while True:
-            if len(self._update_worker_images) == 0:
-                time.sleep(1)
-                continue
+        try:
+            while True:
+                if len(self._update_worker_images) == 0:
+                    time.sleep(1)
+                    continue
 
-            for worker, image in list(self._update_worker_images.items()):
-                self._image.paste(image, worker.position)
-                del self._update_worker_images[worker]
+                for worker, image in list(self._update_worker_images.items()):
+                    self._image.paste(image, worker.position)
+                    del self._update_worker_images[worker]
 
-            time.sleep(3)
+                time.sleep(3)
 
-            if len(self._update_worker_images) > 0:
-                continue
+                if len(self._update_worker_images) > 0:
+                    continue
 
-            for tray in self.trays:
-                print(f'[{datetime.now()}] Serving {tray.__class__.__name__}')
-                tray.serve(self._image)
+                for tray in self.trays:
+                    print(f'[{datetime.now()}] Serving {tray.__class__.__name__}')
+                    tray.serve(self._image)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            for worker in self.workers:
+                worker.cancel_loop()
 
     def render_once(self):
         for worker in self.workers:

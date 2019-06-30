@@ -27,6 +27,10 @@ class Worker:
         self._loop_timer = Timer(interval, self.loop)
         self._loop_timer.start()
 
+    def cancel_loop(self):
+        if self._loop_timer is not None and self._loop_timer.is_alive():
+            self._loop_timer.cancel()
+
     def render(self):
         raise NotImplemented
 
@@ -41,4 +45,3 @@ class Worker:
         worker.position = config.get('position', worker.position)
 
         return worker
-
