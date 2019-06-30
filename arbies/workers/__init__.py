@@ -1,8 +1,9 @@
 from __future__ import annotations
 import time
 from threading import Timer
+import traceback
 from typing import Optional, Tuple
-from PIL import Image
+from PIL import Image, ImageDraw
 from arbies.manager import Manager, ConfigDict
 
 
@@ -16,11 +17,14 @@ class Worker:
         self._loop_timer: Optional[Timer] = None
 
     def loop(self):
-        if self.loop_interval is None:
+        try:
             self.render()
-            return
+        except BaseException:
+            traceback.print_exc()
+            self._render_exceptioned()
 
-        self.render()
+        if self.loop_interval is None:
+            return
 
         interval = self.loop_interval - time.time() % self.loop_interval
 
@@ -33,6 +37,17 @@ class Worker:
 
     def render(self):
         raise NotImplemented
+
+    def _render_exceptioned(self):
+        image = Image.new('1', self.size, 1)
+        draw = ImageDraw.Draw(image)
+
+        for x in range(5, max(*self.size) * 2, 10):
+            draw.line(((x, 0), (0, x)))
+            draw.line(((x + 1, 0), (0, x + 1)))
+
+        del draw
+        self.serve(image)
 
     def serve(self, image: Image.Image):
         self.manager.update_worker_image(self, image)
