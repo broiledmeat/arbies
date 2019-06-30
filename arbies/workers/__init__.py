@@ -20,11 +20,9 @@ class Worker:
             self.render()
             return
 
-        start_time = time.time()
-
         self.render()
 
-        interval = self.loop_interval - ((time.time() - start_time) % self.loop_interval)
+        interval = self.loop_interval - time.time() % self.loop_interval
 
         self._loop_timer = Timer(interval, self.loop)
         self._loop_timer.start()
