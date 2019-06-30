@@ -95,32 +95,9 @@ class Device:
         self._send_command(self._DATA_START_TRANSMISSION_1)
 
         start = time.time()
-        for i in range(self._config.width // 4 * self._config.height):
-            temp1 = buffer[i]
-            j = 0
 
-            while j < 4:
-                if (temp1 & 0xC0) == 0xC0:
-                    temp2 = 0x03
-                elif (temp1 & 0xC0) == 0x00:
-                    temp2 = 0x00
-                else:
-                    temp2 = 0x04
-
-                temp2 = (temp2 << 4) & 0xFF
-                temp1 = (temp1 << 2) & 0xFF
-                j += 1
-
-                if (temp1 & 0xC0) == 0xC0:
-                    temp2 |= 0x03
-                elif (temp1 & 0xC0) == 0x00:
-                    temp2 |= 0x00
-                else:
-                    temp2 |= 0x04
-                temp1 = (temp1 << 2) & 0xFF
-
-                self._send_data(temp2)
-                j += 1
+        for value in buffer:
+            self._send_data(value)
 
         self._send_command(self._DISPLAY_REFRESH)
         print('SEND DATA', time.time() - start)
@@ -129,19 +106,15 @@ class Device:
 
     def _get_buffer(self, image: Image.Image) -> List[int]:
         width, height = self._config.width, self._config.height
-        buffer = [0x00] * (width * height // 4)
+        buffer = [0x00] * (width * height // 2)
         pixels = image.load()
 
         for y in range(height):
-            for x in range(0, width, 4):
-                i = (x + y * width) // 4
-                if pixels[x, y] != 0:
-                    buffer[i] |= 0xc0  # 11000000
-                if pixels[x + 1, y] != 0:
+            for x in range(0, width, 2):
+                i = (x + y * width) // 2
+                if pixels[x + 0, y] != 0:
                     buffer[i] |= 0x30  # 00110000
-                if pixels[x + 2, y] != 0:
-                    buffer[i] |= 0x0c  # 00001100
-                if pixels[x + 3, y] != 0:
+                if pixels[x + 1, y] != 0:
                     buffer[i] |= 0x03  # 00000011
 
         return buffer
