@@ -17,14 +17,22 @@ class DateTimeWorker(Worker):
         self.halign: str = 'left'
         self.valign: str = 'top'
 
+        self._last_text = ''
+
     def render(self):
+        now = adt.now_tz()
+        text = now.strftime(self.format) if self.format is not None else str(now)
+
+        if text == self._last_text:
+            return
+
+        self._last_text = text
+
         image = Image.new('1', self.size, 1)
         draw = ImageDraw.Draw(image)
 
         font = drawing.get_font(size=self.font_size)
-        now = adt.now_tz()
 
-        text = now.strftime(self.format) if self.format is not None else str(now)
         drawing.aligned_text(draw, text, rect=self.size, halign=self.halign, valign=self.valign, font=font)
 
         del draw
