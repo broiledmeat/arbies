@@ -22,7 +22,17 @@ class Manager:
 
         self._update_worker_images: Dict[Worker, Image.Image] = {}
 
+    @property
+    def size(self):
+        return tuple(self._size)
+
+    def startup(self):
+        for tray in self.trays:
+            tray.startup()
+
     def loop(self):
+        self.startup()
+
         for worker in self.workers:
             worker.loop()
 
@@ -54,6 +64,8 @@ class Manager:
                 worker.cancel_loop()
 
     def render_once(self):
+        self.startup()
+
         for worker in self.workers:
             worker.render()
 

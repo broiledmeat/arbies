@@ -7,6 +7,9 @@ class Tray:
     def __init__(self, manager: Manager):
         self.manager = manager
 
+    def startup(self):
+        pass
+
     def serve(self, image: Image.Image):
         raise NotImplemented
 
