@@ -21,6 +21,7 @@ class WeatherWorker(Worker):
         self.position = (0, 100)
         self.loop_interval = 30 * 60
 
+        self.font_size: int = 16
         self.type = 'temperature'
         self.office: str = 'ALY'
         self.grid: Tuple[int, int] = (56, 68)
@@ -41,18 +42,26 @@ class WeatherWorker(Worker):
         self.serve(image)
 
     def _render_temperature(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
-        font = drawing.get_font(size=24)
-        drawing.aligned_text(draw, f'{period.temperature}f', rect=self.size, halign='center', font=font)
+        font = drawing.get_font(size=self.font_size)
+        drawing.aligned_text(draw, f'{period.temperature}f',
+                             rect=self.size,
+                             halign='center',
+                             valign='middle',
+                             font=font)
 
     def _render_wind(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
-        font_size = 24
-        font = drawing.get_font(size=font_size)
+        font = drawing.get_font(size=self.font_size)
 
         text = f'{period.wind_speed}mph'
+
+        if period.wind_speed == 0:
+            drawing.aligned_text(draw, text, rect=self.size, halign='center', valign='middle', font=font)
+            return
+
         text_size = draw.textsize(text, font=font)
 
         icon_name = '-'.join(['arrow'] + [self._wind_direction_icon_map[token] for token in period.wind_direction])
-        icon = drawing.get_icon(icon_name, (font_size, font_size))
+        icon = drawing.get_icon(icon_name, (self.font_size, self.font_size))
 
         x_offset = int((self.size[0] - (icon.width + text_size[0])) / 2)
 
@@ -69,6 +78,7 @@ class WeatherWorker(Worker):
         # noinspection PyTypeChecker
         worker: WeatherWorker = super().from_config(manager, config)
 
+        worker.font_size = config.get('font_size', worker.font_size)
         worker.type = config.get('type', worker.type)
         worker.office = config.get('office', worker.office)
         worker.grid = config.get('grid', worker.grid)
