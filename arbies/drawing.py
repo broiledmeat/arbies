@@ -48,8 +48,8 @@ def aligned_text(draw: ImageDraw.ImageDraw,
                  text: str,
                  position: Optional[Tuple[float, float]] = None,
                  rect: Optional[Tuple[float, float]] = None,
-                 halign: str = 'left',
-                 valign: str = 'top',
+                 horizontal_alignment: str = 'left',
+                 vertical_alignment: str = 'top',
                  font: ImageFont.ImageFont = None):
     assert(position is not None or rect is not None)
 
@@ -57,22 +57,22 @@ def aligned_text(draw: ImageDraw.ImageDraw,
     w, h = rect or (0, 0)
     tw, th = draw.textsize(text, font=font)
 
-    if halign == 'left':
+    if horizontal_alignment == 'left':
         pass
-    elif halign == 'center':
+    elif horizontal_alignment == 'center':
         x += (w / 2) - (tw / 2)
-    elif halign == 'right':
+    elif horizontal_alignment == 'right':
         x += w - tw
     else:
-        raise ValueError(halign)
+        raise ValueError(horizontal_alignment)
 
-    if valign == 'top':
+    if vertical_alignment == 'top':
         pass
-    elif valign == 'middle':
+    elif vertical_alignment == 'middle':
         y += (h / 2) - (th / 2)
-    elif valign == 'bottom':
+    elif vertical_alignment == 'bottom':
         y += h - th
     else:
-        raise ValueError(valign)
+        raise ValueError(vertical_alignment)
 
     draw.text((x, y), text, font=font)

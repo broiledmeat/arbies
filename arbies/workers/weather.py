@@ -47,8 +47,8 @@ class WeatherWorker(Worker):
         font = drawing.get_font(size=self.font_size)
         drawing.aligned_text(draw, f'{period.temperature}f',
                              rect=self.size,
-                             halign='center',
-                             valign='middle',
+                             horizontal_alignment='center',
+                             vertical_alignment='middle',
                              font=font)
 
     def _render_wind(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
@@ -57,7 +57,7 @@ class WeatherWorker(Worker):
         text = f'{period.wind_speed}mph'
 
         if period.wind_speed == 0:
-            drawing.aligned_text(draw, text, rect=self.size, halign='center', valign='middle', font=font)
+            drawing.aligned_text(draw, text, rect=self.size, horizontal_alignment='center', vertical_alignment='middle', font=font)
             return
 
         text_size = draw.textsize(text, font=font)
@@ -72,12 +72,12 @@ class WeatherWorker(Worker):
         drawing.aligned_text(draw, text,
                              position=(x_offset + icon.width, 0),
                              rect=self.size,
-                             valign='middle',
+                             vertical_alignment='middle',
                              font=font)
 
     def _render_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         font = drawing.get_font(size=self.font_size)
-        drawing.aligned_text(draw, period.short_forecast, rect=self.size, halign='center', font=font)
+        drawing.aligned_text(draw, period.short_forecast, rect=self.size, horizontal_alignment='center', font=font)
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> WeatherWorker:
