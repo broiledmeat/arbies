@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from contextlib import contextmanager
 import time
+from threading import Lock
 from typing import List
 from PIL import Image
 import spidev
@@ -152,3 +154,18 @@ class Device:
         GPIO.setup(self._config.busy_pin, GPIO.IN)
         self._spi.max_speed_hz = 2000000
         self._spi.mode = 0b00
+
+    _lock = Lock()
+
+    class AcquireLockError(RuntimeError):
+        pass
+
+    @contextmanager
+    def try_locked(self, blocking=False):
+        if not self._lock.acquire(blocking=blocking):
+            raise self.AcquireLockError
+
+        try:
+            yield
+        finally:
+            self._lock.release()
