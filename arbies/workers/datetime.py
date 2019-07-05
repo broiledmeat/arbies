@@ -11,7 +11,7 @@ class DateTimeWorker(Worker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self.loop_interval = 0.5 * 60
+        self.loop_interval = 60
         self.format: Optional[str] = None
         self.font_size: int = 16
         self.halign: str = 'left'
