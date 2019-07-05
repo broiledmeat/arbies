@@ -26,19 +26,19 @@ class Manager:
     def size(self):
         return tuple(self._size)
 
-    def startup(self):
+    def _startup(self):
         for tray in self.trays:
             tray.startup()
 
     def loop(self):
-        self.startup()
+        self._startup()
 
         for worker in self.workers:
             worker.loop()
 
-        self._render_loop()
+        self._loop()
 
-    def _render_loop(self):
+    def _loop(self):
         try:
             while True:
                 if len(self._update_worker_images) == 0:
@@ -64,7 +64,7 @@ class Manager:
                 worker.cancel_loop()
 
     def render_once(self):
-        self.startup()
+        self._startup()
 
         for worker in self.workers:
             worker.render()
