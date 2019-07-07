@@ -45,8 +45,7 @@ class WeatherWorker(Worker):
 
     def _render_temperature(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         font = drawing.get_font(size=self.font_size)
-        drawing.aligned_text(draw, f'{period.temperature}f',
-                             rect=self.size,
+        drawing.aligned_text(draw, f'{period.temperature}f', self.size,
                              horizontal_alignment='center',
                              vertical_alignment='middle',
                              font=font)
@@ -57,7 +56,10 @@ class WeatherWorker(Worker):
         text = f'{period.wind_speed}mph'
 
         if period.wind_speed == 0:
-            drawing.aligned_text(draw, text, rect=self.size, horizontal_alignment='center', vertical_alignment='middle', font=font)
+            drawing.aligned_text(draw, text, self.size,
+                                 horizontal_alignment='center',
+                                 vertical_alignment='middle',
+                                 font=font)
             return
 
         text_size = draw.textsize(text, font=font)
@@ -69,9 +71,8 @@ class WeatherWorker(Worker):
 
         image.paste(icon, (x_offset, int((self.size[1] / 2) - (icon.height / 2))))
 
-        drawing.aligned_text(draw, text,
-                             position=(x_offset + icon.width, 0),
-                             rect=self.size,
+        drawing.aligned_text(draw, text, self.size,
+                             offset=(x_offset + icon.width, 0),
                              vertical_alignment='middle',
                              font=font)
 

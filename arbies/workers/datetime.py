@@ -33,8 +33,7 @@ class DateTimeWorker(Worker):
 
         font = drawing.get_font(size=self.font_size)
 
-        drawing.aligned_text(draw, text,
-                             rect=self.size,
+        drawing.aligned_text(draw, text, self.size,
                              horizontal_alignment=self.horizontal_alignment,
                              vertical_alignment=self.vertical_alignment,
                              font=font)
