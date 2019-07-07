@@ -37,6 +37,8 @@ class WeatherWorker(Worker):
             self._render_wind(image, draw, period)
         elif self.type == 'forecast':
             self._render_forecast(image, draw, period)
+        elif self.type == 'long_forecast':
+            self._render_long_forecast(image, draw, period)
         else:
             raise ValueError(self.type)
 
@@ -78,7 +80,15 @@ class WeatherWorker(Worker):
 
     def _render_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         font = drawing.get_font(size=self.font_size)
-        drawing.aligned_text(draw, period.short_forecast, rect=self.size, horizontal_alignment='center', font=font)
+        drawing.aligned_wrapped_text(draw, period.short_forecast, self.size,
+                                     horizontal_alignment='center',
+                                     font=font)
+
+    def _render_long_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
+        font = drawing.get_font(size=self.font_size)
+        drawing.aligned_wrapped_text(draw, period.long_forecast, self.size,
+                                     horizontal_alignment='center',
+                                     font=font)
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> WeatherWorker:
