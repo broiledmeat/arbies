@@ -70,26 +70,38 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
                          horizontal_alignment: str = 'left',
                          vertical_alignment: str = 'top',
                          font: ImageFont.ImageFont = None):
-    sections: List[Tuple[str, Tuple[int, int]]] = []
+    font = font or ImageFont.load_default()
+    line_height = font.getmetrics()[0] * 1.2
+    sections: List[Tuple[str, Vector2]] = []
     section: str = ''
-    size: Tuple[int, int] = (0, 0)
+    section_size: Vector2 = (0, 0)
 
-    for token in text.split():
+    i: int = 0
+    tokens: List[str] = text.split()
+    while i < len(tokens):
+        token = tokens[i]
+
         if len(section) == 0:
             check = token
         else:
             check = section + ' ' + token
-        check_size = draw.textsize(check, font=font)
 
-        if len(section) > 0 and check_size[0] > area[0]:
-            sections.append((section, size))
-            section = token
+        size = draw.textsize(check, font=font)
+
+        if len(section) > 0 and size[0] > area[0]:
+            sections.append((section, section_size))
+            section = ''
+            section_size = (0, 0)
             continue
 
         section = check
-        size = check_size
-    else:
-        sections.append((section, size))
+        section_size = size
+        i += 1
+
+        if i == len(tokens):
+            sections.append((section, section_size))
+
+    total_height = line_height * len(sections)
 
     if horizontal_alignment == 'left':
         x = 0
@@ -100,7 +112,6 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
     else:
         raise ValueError(horizontal_alignment)
 
-    total_height = sum([x[1][1] for x in sections])
     if vertical_alignment == 'top':
         y = 0
     elif vertical_alignment == 'middle':
@@ -123,7 +134,7 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
 
         draw.text((x, y), text, font=font)
 
-        y += section[1][1]
+        y += line_height
 
 
 def _get_aligned_position(section: Vector2,
