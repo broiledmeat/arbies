@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from contextlib import contextmanager
 import time
 from threading import Lock
-from typing import List
+from typing import Callable, List
 from PIL import Image
 import spidev
 import RPi.GPIO as GPIO
@@ -87,22 +86,14 @@ class Device:
         self._wait_until_idle()
 
     def display(self, image: Image.Image):
-        import time
-
-        start = time.time()
         buffer = self._get_buffer(image)
 
-        print('GET BUFFER', time.time() - start)
-
         self._send_command(self._DATA_START_TRANSMISSION_1)
-
-        start = time.time()
 
         for value in buffer:
             self._send_data(value)
 
         self._send_command(self._DISPLAY_REFRESH)
-        print('SEND DATA', time.time() - start)
         self._delay_ms(100)
         self._wait_until_idle()
 
@@ -160,12 +151,11 @@ class Device:
     class AcquireLockError(RuntimeError):
         pass
 
-    @contextmanager
-    def try_locked(self, blocking=False):
+    def try_locked(self, func: Callable, blocking=False):
         if not self._lock.acquire(blocking=blocking):
-            raise self.AcquireLockError
+            return
 
         try:
-            yield
+            func()
         finally:
             self._lock.release()

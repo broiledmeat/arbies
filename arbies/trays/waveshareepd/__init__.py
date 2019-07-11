@@ -37,13 +37,11 @@ class WaveShareEPDTray(Tray):
         self._loop_timer.start()
 
     def clear(self):
-        with suppress(Device.AcquireLockError), self._device.try_locked():
-            self._device.clear()
+        self._device.try_locked(self._device.clear)
 
     def serve(self, image: Image.Image):
         self._image = image
-        with suppress(Device.AcquireLockError), self._device.try_locked():
-            self._device.display(self._image)
+        self._device.try_locked(lambda: self._device.display(self._image))
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> WaveShareEPDTray:
