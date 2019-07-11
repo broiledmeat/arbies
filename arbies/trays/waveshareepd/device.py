@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import time
 from threading import Lock
-from typing import Callable, List
+from typing import Callable, List, Sequence
 from PIL import Image
 import spidev
 import RPi.GPIO as GPIO
@@ -32,6 +32,8 @@ class Device:
     _VCM_DC_SETTING = 0x82
     _FLASH_MODE = 0xe5
 
+    _SEND_DATA_CHUNK_LENGTH = 4096
+
     def __init__(self, config: DeviceConfig):
         self._config = config
         self._spi = spidev.SpiDev(0, 0)
@@ -49,39 +51,34 @@ class Device:
         self.reset()
 
         self._send_command(self._POWER_SETTING)
-        self._send_data(0x37)
-        self._send_data(0x00)
+        self._send_data([0x37, 0x00])
         self._send_command(self._PANEL_SETTING)
-        self._send_data(0xcf)
-        self._send_data(0x08)
+        self._send_data([0xcf, 0x08])
         self._send_command(self._BOOSTER_SOFT_START)
-        self._send_data(0xc7)
-        self._send_data(0xcc)
-        self._send_data(0x28)
+        self._send_data([0xc7, 0xcc, 0x28])
         self._send_command(self._POWER_ON)
         self._wait_until_idle()
         self._send_command(self._PLL_CONTROL)
-        self._send_data(0x3c)
+        self._send_data([0x3c])
         self._send_command(self._TEMPERATURE_CALIBRATION)
-        self._send_data(0x00)
+        self._send_data([0x00])
         self._send_command(self._VCOM_AND_DATA_INTERVAL_SETTING)
-        self._send_data(0x77)
+        self._send_data([0x77])
         self._send_command(self._TCON_SETTING)
-        self._send_data(0x22)
+        self._send_data([0x22])
         self._send_command(self._TCON_RESOLUTION)
-        self._send_data(self._config.width >> 8)
-        self._send_data(self._config.width & 0xff)
-        self._send_data(self._config.height >> 8)
-        self._send_data(self._config.height & 0xff)
+        self._send_data([self._config.width >> 8,
+                         self._config.width & 0xff,
+                         self._config.height >> 8,
+                         self._config.height & 0xff])
         self._send_command(self._VCM_DC_SETTING)
-        self._send_data(0x1e)
+        self._send_data([0x1e])
         self._send_command(self._FLASH_MODE)
-        self._send_data(0x03)
+        self._send_data([0x03])
 
     def clear(self):
         self._send_command(self._DATA_START_TRANSMISSION_1)
-        for i in range((self._config.width // 4 * self._config.height) * 4):
-            self._send_data(0x33)
+        self._send_data([0x33] * (self._config.width // 4 * self._config.height) * 4)
         self._send_command(self._DISPLAY_REFRESH)
         self._wait_until_idle()
 
@@ -89,9 +86,7 @@ class Device:
         buffer = self._get_buffer(image)
 
         self._send_command(self._DATA_START_TRANSMISSION_1)
-
-        for value in buffer:
-            self._send_data(value)
+        self._send_data(buffer)
 
         self._send_command(self._DISPLAY_REFRESH)
         self._delay_ms(100)
@@ -120,9 +115,11 @@ class Device:
         self._digital_write(self._config.dc_pin, GPIO.LOW)
         self._spi.writebytes([command])
 
-    def _send_data(self, data: int):
+    def _send_data(self, data: Sequence[int]):
         self._digital_write(self._config.dc_pin, GPIO.HIGH)
-        self._spi.writebytes([data])
+
+        for i in range(0, len(data), self._SEND_DATA_CHUNK_LENGTH):
+            self._spi.writebytes(data[i:i + self._SEND_DATA_CHUNK_LENGTH])
 
     @staticmethod
     def _digital_write(pin: int, value: int):
