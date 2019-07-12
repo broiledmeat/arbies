@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABC
 import time
 from threading import Timer
 import traceback
@@ -7,7 +8,7 @@ from PIL import Image, ImageDraw
 from arbies.manager import Manager, ConfigDict
 
 
-class Worker:
+class Worker(ABC):
     def __init__(self, manager: Manager):
         self.manager: Manager = manager
         self.position: Tuple[int, int] = (0, 0)
@@ -15,6 +16,12 @@ class Worker:
 
         self.loop_interval: Optional[float] = None
         self._loop_timer: Optional[Timer] = None
+
+    def startup(self):
+        pass
+
+    def shutdown(self):
+        self.cancel_loop()
 
     def loop(self):
         try:

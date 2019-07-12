@@ -1,13 +1,17 @@
 from __future__ import annotations
+from abc import ABC
 from PIL import Image
 from arbies.manager import Manager, ConfigDict
 
 
-class Tray:
+class Tray(ABC):
     def __init__(self, manager: Manager):
         self.manager = manager
 
     def startup(self):
+        pass
+
+    def shutdown(self):
         pass
 
     def serve(self, image: Image.Image):

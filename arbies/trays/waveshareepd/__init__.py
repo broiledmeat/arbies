@@ -1,5 +1,4 @@
 from __future__ import annotations
-from contextlib import suppress
 import time
 from threading import Timer
 from typing import Optional
@@ -25,6 +24,9 @@ class WaveShareEPDTray(Tray):
         self._device.init()
         self._loop()
 
+    def shutdown(self):
+        self.cancel_loop()
+
     def _loop(self):
         self.clear()
 
@@ -35,6 +37,10 @@ class WaveShareEPDTray(Tray):
 
         self._loop_timer = Timer(interval, self._loop)
         self._loop_timer.start()
+
+    def cancel_loop(self):
+        if self._loop_timer is not None and self._loop_timer.is_alive():
+            self._loop_timer.cancel()
 
     def clear(self):
         self._device.try_locked(self._device.clear)

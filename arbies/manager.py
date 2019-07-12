@@ -30,6 +30,16 @@ class Manager:
         for tray in self.trays:
             tray.startup()
 
+        for worker in self.workers:
+            worker.startup()
+
+    def _shutdown(self):
+        for worker in self.workers:
+            worker.shutdown()
+
+        for tray in self.trays:
+            tray.shutdown()
+
     def loop(self):
         self._startup()
 
@@ -60,8 +70,7 @@ class Manager:
         except KeyboardInterrupt:
             pass
         finally:
-            for worker in self.workers:
-                worker.cancel_loop()
+            self._shutdown()
 
     def render_once(self):
         self._startup()
@@ -74,6 +83,8 @@ class Manager:
 
         for tray in self.trays:
             tray.serve(self._image)
+
+        self._shutdown()
 
     def update_worker_image(self, worker, image: Image.Image):
         print(f'[{datetime.now()}] Updating {worker.__class__.__name__}')
