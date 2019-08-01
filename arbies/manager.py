@@ -94,11 +94,15 @@ class Manager:
     def from_config(cls, config: ConfigDict) -> Manager:
         from arbies.trays import Tray
         from arbies.workers import Worker
+        from arbies.drawing import Font
 
         manager = cls()
 
         display_config: ConfigDict = config.get('display', {})
         manager._size = display_config.get('size', manager._size)
+
+        for font_config in config.get('fonts', []):
+            Font.load_from_config(font_config)
 
         for package_name, type_, manager_list in (('trays', Tray, manager.trays),
                                                   ('workers', Worker, manager.workers)):
