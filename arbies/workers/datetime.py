@@ -13,7 +13,6 @@ class DateTimeWorker(Worker):
 
         self.loop_interval = 60
         self.format: Optional[str] = None
-        self.font_size: int = 16
         self.horizontal_alignment: str = 'left'
         self.vertical_alignment: str = 'top'
 
@@ -31,12 +30,9 @@ class DateTimeWorker(Worker):
         image = Image.new('1', self.size, 1)
         draw = ImageDraw.Draw(image)
 
-        font = drawing.get_font(size=self.font_size)
-
-        drawing.aligned_text(draw, text, self.size,
+        drawing.aligned_text(draw, self.font, text, self.size,
                              horizontal_alignment=self.horizontal_alignment,
-                             vertical_alignment=self.vertical_alignment,
-                             font=font)
+                             vertical_alignment=self.vertical_alignment)
 
         del draw
         self.serve(image)
@@ -47,7 +43,6 @@ class DateTimeWorker(Worker):
         worker: DateTimeWorker = super().from_config(manager, config)
 
         worker.format = config.get('format', worker.format)
-        worker.font_size = config.get('font_size', worker.font_size)
         worker.horizontal_alignment = config.get('horizontal_alignment', worker.horizontal_alignment)
         worker.vertical_alignment = config.get('vertical_alignment', worker.vertical_alignment)
 

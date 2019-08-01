@@ -6,6 +6,7 @@ import traceback
 from typing import Optional, Tuple
 from PIL import Image, ImageDraw
 from arbies.manager import Manager, ConfigDict
+from arbies.drawing import Font, get_font
 
 
 class Worker(ABC):
@@ -13,6 +14,7 @@ class Worker(ABC):
         self.manager: Manager = manager
         self.position: Tuple[int, int] = (0, 0)
         self.size: Tuple[int, int] = (100, 100)
+        self.font: Font = get_font()
 
         self.loop_interval: Optional[float] = None
         self._loop_timer: Optional[Timer] = None
@@ -65,5 +67,6 @@ class Worker(ABC):
 
         worker.size = config.get('size', worker.size)
         worker.position = config.get('position', worker.position)
+        worker.font = get_font(config.get('font', None), size=config.get('font_size', None))
 
         return worker
