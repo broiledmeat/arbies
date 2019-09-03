@@ -3,7 +3,7 @@ import os
 from PIL import ImageDraw, ImageFont
 from typing import Union, Optional, Tuple, List, Dict
 from ..manager import ConfigDict
-from ._consts import HorizontalAlignment, VerticalAlignment
+from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
 
 
 class Font(ImageFont.FreeTypeFont):
@@ -86,7 +86,7 @@ def aligned_text(draw: ImageDraw.ImageDraw,
                  horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
                  vertical_alignment: VerticalAlignment = VerticalAlignment.TOP):
     size = draw.textsize(text, font=font)
-    x, y = _get_aligned_position(size, area, horizontal_alignment, vertical_alignment)
+    x, y = get_aligned_position(size, area, horizontal_alignment, vertical_alignment)
 
     if offset is not None:
         x += offset[0]
@@ -161,34 +161,8 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
         # noinspection PyTypeChecker
         size: Vector2Type = section[1]
 
-        x, _ = _get_aligned_position(size, area, horizontal_alignment, VerticalAlignment.TOP)
+        x, _ = get_aligned_position(size, area, horizontal_alignment, VerticalAlignment.TOP)
 
         draw.text((x, y), text, font=font)
 
         y += line_height
-
-
-def _get_aligned_position(section: Vector2Type,
-                          area: Vector2Type,
-                          horizontal_alignment: HorizontalAlignment,
-                          vertical_alignment: VerticalAlignment
-                          ) -> Vector2Type:
-    if horizontal_alignment == HorizontalAlignment.LEFT:
-        x = 0
-    elif horizontal_alignment == HorizontalAlignment.CENTER:
-        x = (area[0] - section[0]) / 2
-    elif horizontal_alignment == HorizontalAlignment.RIGHT:
-        x = area[0] - section[0]
-    else:
-        raise ValueError(horizontal_alignment)
-
-    if vertical_alignment == VerticalAlignment.TOP:
-        y = 0
-    elif vertical_alignment == VerticalAlignment.CENTER:
-        y = (area[1] - section[1]) / 2
-    elif vertical_alignment == VerticalAlignment.BOTTOM:
-        y = area[1] - section[1]
-    else:
-        raise ValueError(vertical_alignment)
-
-    return x, y

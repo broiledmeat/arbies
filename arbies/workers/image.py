@@ -1,6 +1,8 @@
 from __future__ import annotations
 from PIL import Image
 from typing import Optional
+from arbies import drawing
+from arbies.drawing import HorizontalAlignment, VerticalAlignment
 from arbies.manager import Manager, ConfigDict
 from arbies.workers import Worker
 
@@ -14,14 +16,11 @@ class ImageWorker(Worker):
 
     def render(self):
         image = Image.new('1', self.size, 1)
-
-        thumb: Image.Image = Image.open(self.path)
-        thumb.thumbnail(self.size, Image.LANCZOS)
-
-        image.paste(thumb,
-                    (int((image.width / 2) - (thumb.width / 2)),
-                     int((image.height / 2) - (thumb.height / 2))))
-
+        drawing.draw_image(image,
+                           Image.open(self.path),
+                           resize=True,
+                           horizontal_alignment=HorizontalAlignment.CENTER,
+                           vertical_alignment=VerticalAlignment.CENTER)
         self.serve(image)
 
     @classmethod

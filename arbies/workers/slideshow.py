@@ -3,6 +3,8 @@ import os
 import random
 from PIL import Image
 from typing import Optional, List
+from arbies import drawing
+from arbies.drawing import HorizontalAlignment, VerticalAlignment
 from arbies.manager import Manager, ConfigDict
 from arbies.workers import Worker
 
@@ -27,18 +29,12 @@ class SlideShowWorker(Worker):
             return
 
         image = Image.new('1', self.size, 1)
-
-        path = self._image_paths[self._image_index]
-
-        thumb: Image.Image = Image.open(path)
-        thumb.thumbnail(self.size, Image.LANCZOS)
-
-        image.paste(thumb,
-                    (int((image.width / 2) - (thumb.width / 2)),
-                     int((image.height / 2) - (thumb.height / 2))))
-
+        drawing.draw_image(image,
+                           Image.open(self._image_paths[self._image_index]),
+                           resize=True,
+                           horizontal_alignment=HorizontalAlignment.CENTER,
+                           vertical_alignment=VerticalAlignment.CENTER)
         self.serve(image)
-
         self._image_index = (self._image_index + 1) % len(self._image_paths)
 
     def _get_image_paths(self) -> List[str]:
