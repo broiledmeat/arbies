@@ -5,6 +5,7 @@ from arbies.manager import Manager, ConfigDict
 from arbies.workers import Worker
 from arbies.suppliers import datetime as adt
 from arbies import drawing
+from arbies.drawing import HorizontalAlignment, VerticalAlignment
 
 
 class DateTimeWorker(Worker):
@@ -13,8 +14,8 @@ class DateTimeWorker(Worker):
 
         self.loop_interval = 60
         self.format: Optional[str] = None
-        self.horizontal_alignment: str = 'left'
-        self.vertical_alignment: str = 'top'
+        self.horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT
+        self.vertical_alignment: VerticalAlignment = VerticalAlignment.TOP
 
         self._last_text = ''
 
@@ -43,7 +44,9 @@ class DateTimeWorker(Worker):
         worker: DateTimeWorker = super().from_config(manager, config)
 
         worker.format = config.get('format', worker.format)
-        worker.horizontal_alignment = config.get('horizontal_alignment', worker.horizontal_alignment)
-        worker.vertical_alignment = config.get('vertical_alignment', worker.vertical_alignment)
+        worker.horizontal_alignment = HorizontalAlignment.convert_from(config.get('horizontal_alignment',
+                                                                                  worker.horizontal_alignment))
+        worker.vertical_alignment = VerticalAlignment.convert_from(config.get('vertical_alignment',
+                                                                              worker.vertical_alignment))
 
         return worker

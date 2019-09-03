@@ -4,6 +4,7 @@ import io
 from PIL import Image, ImageFont, ImageOps
 import cairosvg
 from typing import Optional, Tuple, Dict
+from ._consts import HorizontalAlignment, VerticalAlignment
 from .font import Font, get_font, get_line_height, aligned_text, aligned_wrapped_text
 
 Vector2Type = Tuple[float, float]

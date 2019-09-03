@@ -4,7 +4,7 @@ from typing import Tuple
 from arbies.manager import Manager, ConfigDict
 from arbies.workers import Worker
 from arbies.suppliers import weather
-from arbies.drawing import get_line_height
+from arbies.drawing import HorizontalAlignment, VerticalAlignment, get_line_height
 from arbies import drawing
 
 
@@ -47,16 +47,16 @@ class WeatherWorker(Worker):
 
     def _render_temperature(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         drawing.aligned_text(draw, self.font, f'{period.temperature}f', self.size,
-                             horizontal_alignment='center',
-                             vertical_alignment='middle')
+                             horizontal_alignment=HorizontalAlignment.CENTER,
+                             vertical_alignment=VerticalAlignment.CENTER)
 
     def _render_wind(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         text = f'{period.wind_speed}mph'
 
         if period.wind_speed == 0:
             drawing.aligned_text(draw, self.font, text, self.size,
-                                 horizontal_alignment='center',
-                                 vertical_alignment='middle')
+                                 horizontal_alignment=HorizontalAlignment.CENTER,
+                                 vertical_alignment=VerticalAlignment.CENTER)
             return
 
         text_size = draw.textsize(text, font=self.font)
@@ -71,15 +71,15 @@ class WeatherWorker(Worker):
 
         drawing.aligned_text(draw, self.font, text, self.size,
                              offset=(x_offset + icon.width, 0),
-                             vertical_alignment='middle')
+                             vertical_alignment=VerticalAlignment.CENTER)
 
     def _render_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         drawing.aligned_wrapped_text(draw, self.font, period.short_forecast, self.size,
-                                     horizontal_alignment='center')
+                                     horizontal_alignment=HorizontalAlignment.CENTER)
 
     def _render_long_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
         drawing.aligned_wrapped_text(draw, self.font, period.long_forecast, self.size,
-                                     horizontal_alignment='center')
+                                     horizontal_alignment=HorizontalAlignment.CENTER)
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> WeatherWorker:
