@@ -18,8 +18,10 @@ class WeatherPeriod:
     wind_speed: float  # mph
 
 
-_weather_uri: str = 'https://api.weather.gov/gridpoints/{}/{},{}/forecast'
+_weather_daily_uri: str = 'https://api.weather.gov/gridpoints/{}/{},{}/forecast'
+_weather_hourly_uri: str = 'https://api.weather.gov/gridpoints/{}/{},{}/forecast/hourly'
 _weather_period_cache: Dict[Tuple[str, int, int], Tuple[datetime, WeatherPeriod]] = {}
+_cache_expire_time: int = 30 * 60
 
 
 def get_current_period(office: str, grid: Tuple[int, int]) -> WeatherPeriod:
@@ -28,11 +30,32 @@ def get_current_period(office: str, grid: Tuple[int, int]) -> WeatherPeriod:
     now = now_tz()
     key = (office, grid[0], grid[1])
 
-    if key in _weather_period_cache and (now - _weather_period_cache[key][0]).total_seconds() < 30 * 60:
+    if key in _weather_period_cache and (now - _weather_period_cache[key][0]).total_seconds() < _cache_expire_time:
         return _weather_period_cache[key][1]
 
-    # TODO: This is *way* not safe.
-    response = requests.get(_weather_uri.format(office, *grid))
+    daily_period: WeatherPeriod = _get_current_period(_weather_daily_uri, office, grid)
+    hourly_period: WeatherPeriod = _get_current_period(_weather_hourly_uri, office, grid)
+
+    period: WeatherPeriod = WeatherPeriod(
+        name='Now',
+        start_time=hourly_period.start_time,
+        end_time=hourly_period.end_time,
+        is_daytime=hourly_period.is_daytime,
+        short_forecast=hourly_period.short_forecast,
+        long_forecast=daily_period.long_forecast,
+        temperature=hourly_period.temperature,
+        wind_direction=hourly_period.wind_direction,
+        wind_speed=hourly_period.wind_speed
+    )
+
+    _weather_period_cache[key] = (now, period)
+
+    return period
+
+
+def _get_current_period(uri: str, office: str, grid: Tuple[int, int]) -> WeatherPeriod:
+    # TODO: This is not safe.
+    response = requests.get(uri.format(office, *grid))
     data = json.loads(response.content)
 
     period = data['properties']['periods'][0]
@@ -40,7 +63,7 @@ def get_current_period(office: str, grid: Tuple[int, int]) -> WeatherPeriod:
     wind_tokens = str(period['windSpeed']).split()
     wind_speed = int(wind_tokens[0])
 
-    period = WeatherPeriod(
+    return WeatherPeriod(
         name=period['name'],
         start_time=datetime.fromisoformat(period['startTime']),
         end_time=datetime.fromisoformat(period['endTime']),
@@ -51,7 +74,3 @@ def get_current_period(office: str, grid: Tuple[int, int]) -> WeatherPeriod:
         wind_direction=period['windDirection'],
         wind_speed=wind_speed
     )
-
-    _weather_period_cache[key] = (now, period)
-
-    return period
