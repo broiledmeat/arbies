@@ -1,7 +1,12 @@
 from __future__ import annotations
+import sys
+import os
 from datetime import datetime
 import importlib
 import time
+import logging
+from logging import StreamHandler
+from logging.handlers import RotatingFileHandler
 from PIL import Image
 from typing import Union, Dict, Tuple, List
 
@@ -14,6 +19,7 @@ class Manager:
         from arbies.workers import Worker
 
         self.config: ConfigDict = {}
+        self.log: logging.Logger = logging.getLogger('arbies')
         self.trays: List[Tray] = []
         self.workers: List[Worker] = []
 
@@ -21,6 +27,11 @@ class Manager:
         self._image = Image.new('1', self._size, 1)
 
         self._update_worker_images: Dict[Worker, Image.Image] = {}
+
+        self.log.setLevel(logging.DEBUG)
+        handler = StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        self.log.addHandler(handler)
 
     @property
     def size(self):
@@ -65,7 +76,7 @@ class Manager:
                     continue
 
                 for tray in self.trays:
-                    print(f'[{datetime.now()}] Serving {tray.__class__.__name__}')
+                    self.log.info(f'[{datetime.now()}] Serving {tray.label}')
                     tray.serve(self._image)
         except KeyboardInterrupt:
             pass
@@ -87,7 +98,7 @@ class Manager:
         self._shutdown()
 
     def update_worker_image(self, worker, image: Image.Image):
-        print(f'[{datetime.now()}] Updating {worker.__class__.__name__}')
+        self.log.info(f'[{datetime.now()}] Updating {worker.label}')
         self._update_worker_images[worker] = image
 
     @classmethod
@@ -100,6 +111,12 @@ class Manager:
 
         display_config: ConfigDict = config.get('display', {})
         manager._size = display_config.get('size', manager._size)
+
+        log_config: ConfigDict = config.get('log', {})
+        if 'path' in log_config:
+            handler = RotatingFileHandler(Manager._resolve_path(log_config['path']), maxBytes=2048)
+            handler.setLevel(logging.DEBUG)
+            manager.log.addHandler(handler)
 
         for font_config in config.get('fonts', []):
             Font.load_from_config(font_config)
@@ -122,3 +139,7 @@ class Manager:
         manager.config = config
 
         return manager
+
+    @staticmethod
+    def _resolve_path(path: str) -> str:
+        return os.path.expanduser(os.path.expandvars(path))

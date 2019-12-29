@@ -1,16 +1,26 @@
 from __future__ import annotations
 from abc import ABC
+from collections import defaultdict
 import time
 from threading import Timer
 import traceback
-from typing import Optional, Tuple
+from typing import Optional, Dict, Tuple, List
 from PIL import Image, ImageDraw
 from arbies.manager import Manager, ConfigDict
 from arbies.drawing import Font, get_font
 
 
 class Worker(ABC):
+    _instances: Dict[str, List[Worker]] = defaultdict(list)
+
     def __init__(self, manager: Manager):
+        name = self.__class__.__name__
+        if name.endswith(Worker.__name__):
+            name = name[:-len(Worker.__name__)]
+
+        Worker._instances[name].append(self)
+        self.label = f'{name}[{len(Worker._instances[name]) - 1}]'
+
         self.manager: Manager = manager
         self.position: Tuple[int, int] = (0, 0)
         self.size: Tuple[int, int] = (100, 100)
@@ -29,8 +39,8 @@ class Worker(ABC):
         try:
             self.render()
         except BaseException:
-            traceback.print_exc()
             self._render_exceptioned()
+            self.manager.log.error(traceback.format_exc())
 
         if self.loop_interval is None:
             return
