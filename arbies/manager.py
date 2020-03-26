@@ -23,6 +23,9 @@ class Manager:
         self.trays: List[Tray] = []
         self.workers: List[Worker] = []
 
+        self.is_looping: bool = False
+        self._is_cancelling_loop: bool = False
+
         self._size: Tuple[int, int] = (640, 384)
         self._image = Image.new('1', self._size, 1)
 
@@ -59,9 +62,14 @@ class Manager:
 
         self._loop()
 
+    def cancel_loop(self):
+        self._is_cancelling_loop = True
+
     def _loop(self):
+        self.is_looping = True
+
         try:
-            while True:
+            while not self._is_cancelling_loop:
                 if len(self._update_worker_images) == 0:
                     time.sleep(1)
                     continue
@@ -78,9 +86,9 @@ class Manager:
                 for tray in self.trays:
                     self.log.info(f'[{datetime.now()}] Serving {tray.label}')
                     tray.serve(self._image)
-        except KeyboardInterrupt:
-            pass
         finally:
+            self.is_looping = False
+            self._is_cancelling_loop = False
             self._shutdown()
 
     def render_once(self):

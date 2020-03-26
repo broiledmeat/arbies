@@ -31,9 +31,6 @@ class Font(ImageFont.FreeTypeFont):
         if name is None or len(name) == 0:
             raise ValueError(f'Font name is either not defined or is blank.')
 
-        if name in _font_cache:
-            raise ValueError(f'Font name "{name}" is already defined.')
-
         if path is None or not os.path.isfile(path):
             raise ValueError(f'Font path "{path}" can not be found.')
 
