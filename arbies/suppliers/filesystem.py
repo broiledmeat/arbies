@@ -67,9 +67,7 @@ class OnModifyObserver:
             self.parent = parent
 
         def on_modified(self, event):
-            print('EVENT', event, event.src_path, self.parent._filename)
             if self.parent._filename is None or event.src_path == self.parent._filename:
-                print('TRIGGERED!')
                 self.parent._throttled_callback.trigger()
 
 
