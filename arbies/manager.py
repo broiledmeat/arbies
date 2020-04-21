@@ -83,7 +83,7 @@ class Manager:
                     continue
 
                 for tray in self.trays:
-                    self.log.info(f'[{datetime.now()}] Serving {tray.label}')
+                    self.log.debug(f'[{datetime.now()}] Serving {tray.label}')
                     tray.serve(self._image)
         finally:
             self.is_looping = False
@@ -105,7 +105,7 @@ class Manager:
         self._shutdown()
 
     def update_worker_image(self, worker, image: Image.Image):
-        self.log.info(f'[{datetime.now()}] Updating {worker.label}')
+        self.log.debug(f'[{datetime.now()}] Updating {worker.label}')
         self._update_worker_images[worker] = image
 
     @classmethod
@@ -120,7 +120,7 @@ class Manager:
         log_config: ConfigDict = config.get('log', {})
         if 'path' in log_config:
             handler = RotatingFileHandler(Manager._resolve_path(log_config['path']), maxBytes=2048)
-            handler.setLevel(logging.DEBUG)
+            handler.setLevel(logging.INFO)
             manager.log.addHandler(handler)
 
         for font_config in config.get('fonts', []):
