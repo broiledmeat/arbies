@@ -2,8 +2,18 @@ from __future__ import annotations
 from abc import ABC
 from _collections import defaultdict
 from PIL import Image
+from arbies import import_module_class_from_fullname
 from arbies.manager import Manager, ConfigDict
-from typing import Dict, List
+from typing import Type, Optional, Dict, List
+
+_registered: Dict[str, str] = {
+    'file': 'arbies.trays.file.FileTray',
+    'waveshareepd': 'arbies.trays.waveshareepd.WaveShareEPDTray'
+}
+
+
+def get(name: str) -> Optional[Type]:
+    return import_module_class_from_fullname(_registered[name.lower()])
 
 
 class Tray(ABC):

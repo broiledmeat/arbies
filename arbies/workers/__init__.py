@@ -1,13 +1,26 @@
 from __future__ import annotations
 from abc import ABC
 from collections import defaultdict
-import time
 from threading import Timer
+import time
 import traceback
-from typing import Optional, Dict, Tuple, List
 from PIL import Image, ImageDraw
+from arbies import import_module_class_from_fullname
 from arbies.manager import Manager, ConfigDict
 from arbies.drawing import Font, get_font
+from typing import Type, Union, Optional, Dict, Tuple, List
+
+_registered: Dict[str, str] = {
+    'datetime': 'arbies.workers.datetime.DateTimeWorker',
+    'image': 'arbies.workers.image.ImageWorker',
+    'slideshow': 'arbies.workers.slideshow.SlideShowWorker',
+    'solidrect': 'arbies.workers.solidrect.SolidRectWorker',
+    'weather': 'arbies.workers.weather.WeatherWorker',
+}
+
+
+def get(name: str) -> Optional[Type]:
+    return import_module_class_from_fullname(_registered[name.lower()])
 
 
 class Worker(ABC):

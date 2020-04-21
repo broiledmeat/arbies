@@ -2,7 +2,6 @@ from __future__ import annotations
 import sys
 import os
 from datetime import datetime
-import importlib
 import time
 import logging
 from logging import StreamHandler
@@ -111,9 +110,7 @@ class Manager:
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Manager:
-        from arbies.trays import Tray
-        from arbies.workers import Worker
-        from arbies.drawing import Font
+        from arbies import trays, workers, drawing
 
         manager = cls()
 
@@ -127,21 +124,14 @@ class Manager:
             manager.log.addHandler(handler)
 
         for font_config in config.get('fonts', []):
-            Font.load_from_config(font_config)
+            drawing.Font.load_from_config(font_config)
 
-        for package_name, type_, manager_list in (('trays', Tray, manager.trays),
-                                                  ('workers', Worker, manager.workers)):
+        for package_name, module, manager_list in (('trays', trays, manager.trays),
+                                                  ('workers', workers, manager.workers)):
             for item_config in config.get(package_name, []):
-                name = item_config.get('name', None)
-
-                if name is None:
-                    raise ValueError(config)
-
-                module = importlib.import_module(f'arbies.{package_name}.{name.lower()}')
-                class_ = getattr(module, f'{name}{type_.__name__}')
-
+                item_config: Dict
+                class_ = module.get(item_config['name'])
                 instance = class_.from_config(manager, item_config)
-
                 manager_list.append(instance)
 
         manager.config = config
