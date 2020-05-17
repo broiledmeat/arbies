@@ -35,6 +35,9 @@ class Manager:
         handler.setLevel(logging.DEBUG)
         self.log.addHandler(handler)
 
+        self._log_formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
+        handler.setFormatter(self._log_formatter)
+
     @property
     def size(self):
         return tuple(self._size)
@@ -94,7 +97,7 @@ class Manager:
         self._startup()
 
         for worker in self.workers:
-            worker.render()
+            worker.try_render()
 
         for worker, image in self._update_worker_images.items():
             self._image.paste(image, worker.position)
@@ -105,7 +108,7 @@ class Manager:
         self._shutdown()
 
     def update_worker_image(self, worker, image: Image.Image):
-        self.log.debug(f'[{datetime.now()}] Updating {worker.label}')
+        self.log.debug(f'Updating {worker.label}')
         self._update_worker_images[worker] = image
 
     @classmethod
@@ -121,13 +124,14 @@ class Manager:
         if 'path' in log_config:
             handler = RotatingFileHandler(Manager._resolve_path(log_config['path']), maxBytes=2048)
             handler.setLevel(logging.INFO)
+            handler.setFormatter(manager._log_formatter)
             manager.log.addHandler(handler)
 
         for font_config in config.get('fonts', []):
             drawing.Font.load_from_config(font_config)
 
         for package_name, module, manager_list in (('trays', trays, manager.trays),
-                                                  ('workers', workers, manager.workers)):
+                                                   ('workers', workers, manager.workers)):
             for item_config in config.get(package_name, []):
                 item_config: Dict
                 class_ = module.get(item_config['name'])

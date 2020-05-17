@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import json
+from string import Template
 import requests
 from typing import Dict, Tuple
 
@@ -18,8 +19,8 @@ class WeatherPeriod:
     wind_speed: float  # mph
 
 
-_weather_daily_uri: str = 'https://api.weather.gov/gridpoints/{}/{},{}/forecast'
-_weather_hourly_uri: str = 'https://api.weather.gov/gridpoints/{}/{},{}/forecast/hourly'
+_weather_daily_uri: Template = Template('https://api.weather.gov/gridpoints/$office/$gridx,$gridy/forecast')
+_weather_hourly_uri: Template = Template('https://api.weather.gov/gridpoints/$office/$gridx,$gridy/forecast/hourly')
 _weather_period_cache: Dict[Tuple[str, int, int], Tuple[datetime, WeatherPeriod]] = {}
 _cache_expire_time: int = 30 * 60
 
@@ -53,10 +54,16 @@ def get_current_period(office: str, grid: Tuple[int, int]) -> WeatherPeriod:
     return period
 
 
-def _get_current_period(uri: str, office: str, grid: Tuple[int, int]) -> WeatherPeriod:
-    # TODO: This is not safe.
-    response = requests.get(uri.format(office, *grid))
-    data = json.loads(response.content)
+def _get_current_period(uri_template: Template, office: str, grid: Tuple[int, int]) -> WeatherPeriod:
+    response = requests.get(uri_template.substitute(office=office, gridx=grid[0], gridy=grid[1]))
+
+    if response.status_code != 200:
+        raise IOError(f'Weather service returned {response.status_code}: {response.content}')
+
+    try:
+        data = json.loads(response.content)
+    except json.JSONDecodeError:
+        raise ValueError(f'Weather service returned unparsable response: {response.content}')
 
     period = data['properties']['periods'][0]
 

@@ -49,11 +49,7 @@ class Worker(ABC):
         self.cancel_loop()
 
     def loop(self):
-        try:
-            self.render()
-        except BaseException:
-            self._render_exceptioned()
-            self.manager.log.error(traceback.format_exc())
+        self.try_render()
 
         if self.loop_interval is None:
             return
@@ -69,6 +65,13 @@ class Worker(ABC):
 
     def render(self):
         raise NotImplemented
+
+    def try_render(self):
+        try:
+            self.render()
+        except BaseException:
+            self._render_exceptioned()
+            self.manager.log.error(traceback.format_exc())
 
     def _render_exceptioned(self):
         image = Image.new('1', self.size, 1)
