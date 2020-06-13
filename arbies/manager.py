@@ -127,8 +127,8 @@ class Manager:
             handler.setFormatter(manager._log_formatter)
             manager.log.addHandler(handler)
 
-        for font_config in config.get('fonts', []):
-            drawing.Font.load_from_config(font_config)
+        for font_name, font_config in config.get('fonts', {}).items():
+            drawing.Font.load_from_config(font_name, font_config)
 
         for package_name, module, manager_list in (('trays', trays, manager.trays),
                                                    ('workers', workers, manager.workers)):

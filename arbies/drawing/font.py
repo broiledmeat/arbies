@@ -20,10 +20,9 @@ class Font(ImageFont.FreeTypeFont):
         return Font(self.path, size=size, line_height=self.line_height)
 
     @classmethod
-    def load_from_config(cls, config: ConfigDict) -> Font:
+    def load_from_config(cls, name: str, config: ConfigDict) -> Font:
         global _default_font
 
-        name = config.get('name', None)
         path = config.get('path', None)
         size = config.get('size', Font.DEFAULT_SIZE)
         line_height = config.get('line_height', Font.DEFAULT_LINE_HEIGHT)
