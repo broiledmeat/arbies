@@ -116,6 +116,7 @@ class Manager:
         from arbies import trays, workers, drawing
 
         manager = cls()
+        manager.config = config
 
         display_config: ConfigDict = config.get('display', {})
         manager._size = display_config.get('size', manager._size)
@@ -137,8 +138,6 @@ class Manager:
                 class_ = module.get(item_config['name'])
                 instance = class_.from_config(manager, item_config)
                 manager_list.append(instance)
-
-        manager.config = config
 
         return manager
 

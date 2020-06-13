@@ -1,6 +1,5 @@
 from __future__ import annotations
 from PIL import Image, ImageDraw
-from typing import Tuple
 from arbies.manager import Manager, ConfigDict
 from arbies.workers import Worker
 from arbies.suppliers import weather
@@ -23,13 +22,12 @@ class WeatherWorker(Worker):
         self.loop_interval = 30 * 60
 
         self.type = 'temperature'
-        self.office: str = 'ALY'
-        self.grid: Tuple[int, int] = (56, 68)
+        self.grid: weather.GpsCoords = weather.GpsCoords(42.865, -73.771)  # Albany
 
     def render(self):
         image = Image.new('1', self.size, 1)
         draw = ImageDraw.Draw(image)
-        period = weather.get_current_period(self.office, self.grid)
+        period = weather.get_current_period(self.grid)
 
         if self.type == 'temperature':
             self._render_temperature(image, draw, period)
@@ -83,11 +81,14 @@ class WeatherWorker(Worker):
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> WeatherWorker:
+        weather.init_from_config(manager.config)
+
         # noinspection PyTypeChecker
         worker: WeatherWorker = super().from_config(manager, config)
 
         worker.type = config.get('type', worker.type)
-        worker.office = config.get('office', worker.office)
-        worker.grid = config.get('grid', worker.grid)
+
+        if 'location' in config:
+            worker.location = weather.get_location_coords(config['location'])
 
         return worker
