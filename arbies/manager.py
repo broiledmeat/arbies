@@ -135,7 +135,7 @@ class Manager:
                                                    ('workers', workers, manager.workers)):
             for item_config in config.get(package_name, []):
                 item_config: Dict
-                class_ = module.get(item_config['name'])
+                class_ = module.get(item_config['type'])
                 instance = class_.from_config(manager, item_config)
                 manager_list.append(instance)
 

@@ -21,7 +21,7 @@ class WeatherWorker(Worker):
         self.position = (0, 100)
         self.loop_interval = 30 * 60
 
-        self.type = 'temperature'
+        self.style = 'temperature'
         self.grid: weather.GpsCoords = weather.GpsCoords(42.865, -73.771)  # Albany
 
     def render(self):
@@ -29,16 +29,16 @@ class WeatherWorker(Worker):
         draw = ImageDraw.Draw(image)
         period = weather.get_current_period(self.grid)
 
-        if self.type == 'temperature':
+        if self.style == 'temperature':
             self._render_temperature(image, draw, period)
-        elif self.type == 'wind':
+        elif self.style == 'wind':
             self._render_wind(image, draw, period)
-        elif self.type == 'forecast':
+        elif self.style == 'forecast':
             self._render_forecast(image, draw, period)
-        elif self.type == 'long_forecast':
+        elif self.style == 'long_forecast':
             self._render_long_forecast(image, draw, period)
         else:
-            raise ValueError(self.type)
+            raise ValueError(self.style)
 
         del draw
         self.serve(image)
@@ -86,7 +86,7 @@ class WeatherWorker(Worker):
         # noinspection PyTypeChecker
         worker: WeatherWorker = super().from_config(manager, config)
 
-        worker.type = config.get('type', worker.type)
+        worker.style = config.get('style', worker.style)
 
         if 'location' in config:
             worker.location = weather.get_location_coords(config['location'])
