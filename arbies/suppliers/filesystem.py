@@ -35,9 +35,9 @@ class OnModifyObserver:
         self._observer.schedule(self._handler, path, recursive=recursive)
         self._observer.start()
 
-    def trigger(self):
+    def trigger(self, path: str):
         for callback in self.callbacks:
-            callback()
+            callback(path)
 
     def is_throttling(self) -> bool:
         return self._throttled_callback.is_throttling()
@@ -48,15 +48,15 @@ class OnModifyObserver:
             self._observer.join()
 
     class _ThrottledCallback:
-        def __init__(self, callback: Callable[[], None], delay: float = 2.0):
+        def __init__(self, callback: Callable[[str], None], delay: float = 2.0):
             self.callback = callback
             self.delay = delay
             self._timer: Optional[threading.Timer] = None
 
-        def trigger(self):
+        def trigger(self, path: str):
             if self._timer is not None and self._timer.is_alive():
                 self._timer.cancel()
-            self._timer = threading.Timer(self.delay, self.callback)
+            self._timer = threading.Timer(self.delay, lambda: self.callback(path))
             self._timer.start()
 
         def is_throttling(self) -> bool:
@@ -68,7 +68,7 @@ class OnModifyObserver:
 
         def on_modified(self, event):
             if self.parent._filename is None or event.src_path == self.parent._filename:
-                self.parent._throttled_callback.trigger()
+                self.parent._throttled_callback.trigger(event.src_path)
 
 
 class DirectoryIterationMethod(Enum):
@@ -82,11 +82,11 @@ class DirectoryIterator:
                  path: str,
                  method: DirectoryIterationMethod = DirectoryIterationMethod.Sorted,
                  recursive: bool = False,
-                 filter: Optional[str] = None):
+                 filter_: Optional[str] = None):
         self.path: str = path
         self.method: DirectoryIterationMethod = method
         self.recursive: bool = recursive
-        self.filter: Optional[re.Match] = re.compile(filter, re.IGNORECASE) if filter is not None else None
+        self.filter: Optional[re.Match] = re.compile(filter_, re.IGNORECASE) if filter_ is not None else None
 
         self._index = 0
         self._paths: List[str] = []
@@ -94,7 +94,7 @@ class DirectoryIterator:
         self._refresh_paths()
 
         self._observer = OnModifyObserver(self.path, self.recursive)
-        self._observer.callbacks.add(self._refresh_paths)
+        self._observer.callbacks.add(lambda _: self._refresh_paths())
 
     def __iter__(self) -> DirectoryIterator:
         return self
@@ -146,7 +146,7 @@ class DirectoryIterator:
             self.parent = parent
 
         def on_modified(self, event):
-            self.parent._throttled_callback.trigger()
+            self.parent._throttled_callback.trigger(event.src_path)
 
 
 def add_on_changed(path: str, callback: OnChangedCallback):
@@ -159,11 +159,11 @@ def add_on_changed(path: str, callback: OnChangedCallback):
 def get_dir_iterator(path: str,
                      method: DirectoryIterationMethod = DirectoryIterationMethod.FileSystem,
                      recursive: bool = False,
-                     filter: Optional[re.Match] = None
+                     filter_: Optional[str] = None
                      ) -> DirectoryIterator:
-    key: _DirectoryIteratorKey = path, method, recursive, filter
+    key: _DirectoryIteratorKey = path, method, recursive, filter_
 
     if key not in _directory_iterators:
-        _directory_iterators[key] = DirectoryIterator(path, method=method, recursive=recursive, filter=filter)
+        _directory_iterators[key] = DirectoryIterator(path, method=method, recursive=recursive, filter_=filter_)
 
     return _directory_iterators[key]
