@@ -3,7 +3,7 @@ import os
 from PIL import Image
 from typing import Optional
 from arbies import drawing
-from arbies.drawing import HorizontalAlignment, VerticalAlignment
+from arbies.drawing import HorizontalAlignment, VerticalAlignment, dithering
 from arbies.manager import Manager, ConfigDict
 from arbies.suppliers.filesystem import DirectoryIterator, DirectoryIterationMethod, get_dir_iterator
 from arbies.workers import Worker
@@ -22,7 +22,7 @@ class SlideShowWorker(Worker):
         if self._path_iterator is None:
             self._path_iterator = get_dir_iterator(self.root,
                                                    method=DirectoryIterationMethod.Random,
-                                                   filter=r'.*\.(jpg|jpeg|png)$')
+                                                   filter_=r'.*\.(jpg|jpeg|png)$')
 
         path: str = next(self._path_iterator)
 
@@ -34,7 +34,8 @@ class SlideShowWorker(Worker):
                            Image.open(path),
                            resize=True,
                            horizontal_alignment=HorizontalAlignment.CENTER,
-                           vertical_alignment=VerticalAlignment.CENTER)
+                           vertical_alignment=VerticalAlignment.CENTER,
+                           post_resize_processor=dithering.ordered_dither_4)
         self.serve(image)
 
     @classmethod

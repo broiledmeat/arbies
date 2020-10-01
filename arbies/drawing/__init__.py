@@ -3,7 +3,7 @@ import os
 import io
 from PIL import Image, ImageFont, ImageOps
 import cairosvg
-from typing import Optional, Tuple, Dict
+from typing import Callable, Optional, Tuple, Dict
 from ._consts import Vector2Type, HorizontalAlignment, VerticalAlignment, get_aligned_position
 from .font import Font, get_font, get_line_height, aligned_text, aligned_wrapped_text
 
@@ -38,12 +38,20 @@ def draw_image(dest: Image.Image,
                offset: Optional[Vector2Type] = None,
                resize: bool = False,
                horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
-               vertical_alignment: VerticalAlignment = VerticalAlignment.TOP):
+               vertical_alignment: VerticalAlignment = VerticalAlignment.TOP,
+               pre_resize_processor: Optional[Callable[[Image.Image], Image.Image]] = None,
+               post_resize_processor: Optional[Callable[[Image.Image], Image.Image]] = None):
     area = area or dest.size
+
+    if pre_resize_processor:
+        source = pre_resize_processor(source)
 
     if resize:
         source = source.copy()
         source.thumbnail(area, Image.LANCZOS if source.size > area else Image.BICUBIC)
+
+    if post_resize_processor:
+        source = post_resize_processor(source)
 
     x, y = get_aligned_position(source.size, area, horizontal_alignment, vertical_alignment)
 
