@@ -10,7 +10,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from typing import Optional, Callable, Tuple, List, Set, Dict
 
-__all__ = ('OnChangedCallback', 'add_on_changed', 'get_dir_iterator')
+__all__ = ('DirectoryIterator', 'DirectoryIterationMethod', 'OnChangedCallback', 'add_on_changed', 'get_dir_iterator')
 
 OnChangedCallback = Callable[[str], None]
 _DirectoryIteratorKey = Tuple[str, 'DirectoryIterationMethod', bool, Optional[str]]
