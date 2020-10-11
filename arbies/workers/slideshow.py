@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from PIL import Image
+from PIL import Image, ImageFilter
 from typing import Optional
 from arbies import drawing
 from arbies.drawing import HorizontalAlignment, VerticalAlignment, dithering
@@ -30,12 +30,20 @@ class SlideShowWorker(Worker):
             return
 
         image = Image.new('1', self.size, 1)
+
+        def smooth(source: Image.Image) -> Image.Image:
+            return source.copy().filter(ImageFilter.SMOOTH_MORE)
+
+        def edges(source: Image.Image) -> Image.Image:
+            return source.copy().filter(ImageFilter.EDGE_ENHANCE_MORE)
+
         drawing.draw_image(image,
                            Image.open(path),
                            resize=True,
                            horizontal_alignment=HorizontalAlignment.CENTER,
                            vertical_alignment=VerticalAlignment.CENTER,
-                           post_resize_processor=dithering.ordered_dither_4)
+                           pre_processors=[smooth],
+                           post_processors=[edges, dithering.error_diffusion_dither])
         self.serve(image)
 
     @classmethod
