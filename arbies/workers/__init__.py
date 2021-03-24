@@ -8,11 +8,12 @@ from PIL import Image, ImageDraw
 from arbies import import_module_class_from_fullname
 from arbies.manager import Manager, ConfigDict
 from arbies.drawing import Font, get_font
-from typing import Type, Union, Optional, Dict, Tuple, List
+from typing import Type, Optional, Dict, Tuple, List
 
 _registered: Dict[str, str] = {
     'datetime': 'arbies.workers.datetime.DateTimeWorker',
     'image': 'arbies.workers.image.ImageWorker',
+    'networkstatus': 'arbies.workers.networkstatus.NetworkStatusWorker',
     'slideshow': 'arbies.workers.slideshow.SlideShowWorker',
     'solidrect': 'arbies.workers.solidrect.SolidRectWorker',
     'weather': 'arbies.workers.weather.WeatherWorker',
