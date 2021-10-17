@@ -90,5 +90,8 @@ class WeatherWorker(Worker):
 
         if 'location' in config:
             worker.location = weather.get_location_coords(config['location'])
+        elif 'locations' in manager.config and len(manager.config['locations']) >= 1:
+            first_location = list(manager.config['locations'].keys())[0]
+            worker.location = weather.get_location_coords(first_location)
 
         return worker
