@@ -18,7 +18,7 @@ def get_icon(name: str, size: Optional[Vector2Type] = None) -> ImageFont.Image:
         return _icon_cache[key]
 
     stream = io.BytesIO()
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../../resources/icons/{name}.svg'))
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../../../resources/icons/{name}.svg'))
 
     cairosvg.svg2png(url=path, write_to=stream, output_width=size[0], output_height=size[1])
 
