@@ -32,6 +32,6 @@ class NetworkStatusWorker(Worker):
         # noinspection PyTypeChecker
         worker: NetworkStatusWorker = super().from_config(manager, config)
 
-        worker.interface = config.get('interface', worker.interface)
+        worker.interface = config.get('Interface', worker.interface)
 
         return worker

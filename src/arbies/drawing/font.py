@@ -8,11 +8,10 @@ from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_positio
 if TYPE_CHECKING:
     from . import Vector2Type, ColorType
 
-_default_font_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                       '../../../resources/fonts/RobotoCondensed-Regular.ttf'))
-
 
 class Font(ImageFont.FreeTypeFont):
+    DEFAULT_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                     '../../../resources/fonts/RobotoCondensed-Regular.ttf'))
     DEFAULT_SIZE: int = 14
     DEFAULT_LINE_HEIGHT: float = 1.2
 
@@ -29,9 +28,9 @@ class Font(ImageFont.FreeTypeFont):
     def load_from_config(cls, name: str, config: ConfigDict) -> Font:
         global _default_font
 
-        path = config.get('path', None)
-        size = config.get('size', Font.DEFAULT_SIZE)
-        line_height = config.get('line_height', Font.DEFAULT_LINE_HEIGHT)
+        path = config.get('Path', Font.DEFAULT_PATH)
+        size = config.get('Size', Font.DEFAULT_SIZE)
+        line_height = config.get('LineHeight', Font.DEFAULT_LINE_HEIGHT)
 
         if name is None or len(name) == 0:
             raise ValueError(f'Font name is either not defined or is blank.')
@@ -58,7 +57,7 @@ def _get_default_font() -> Font:
     global _default_font
 
     if _default_font is None:
-        _default_font = Font(_default_font_path)
+        _default_font = Font(Font.DEFAULT_PATH)
 
     return _default_font
 

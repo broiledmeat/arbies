@@ -55,12 +55,12 @@ class WaveShareEPDTray(Tray):
         tray: WaveShareEPDTray = super().from_config(manager, config)
 
         tray._device_config = DeviceConfig(
-            width=config.get('width', manager.size[0]),
-            height=config.get('height', manager.size[1]),
-            rst_pin=config.get('rst_pin', DeviceConfig.rst_pin),
-            dc_pin=config.get('dc_pin', DeviceConfig.dc_pin),
-            cs_pin=config.get('cs_pin', DeviceConfig.cs_pin),
-            busy_pin=config.get('busy_pin', DeviceConfig.busy_pin),
+            width=config.get('Width', manager.size[0]),
+            height=config.get('Height', manager.size[1]),
+            rst_pin=config.get('RstPin', DeviceConfig.rst_pin),
+            dc_pin=config.get('DcPin', DeviceConfig.dc_pin),
+            cs_pin=config.get('CsPin', DeviceConfig.cs_pin),
+            busy_pin=config.get('BusyPin', DeviceConfig.busy_pin),
         )
 
         return tray

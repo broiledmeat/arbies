@@ -28,6 +28,6 @@ class ImageWorker(Worker):
         # noinspection PyTypeChecker
         worker: ImageWorker = super().from_config(manager, config)
 
-        worker.path = config.get('path', worker.path)
+        worker.path = config.get('Path', worker.path)
 
         return worker

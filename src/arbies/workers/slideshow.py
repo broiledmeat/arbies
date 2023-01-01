@@ -42,7 +42,7 @@ class SlideShowWorker(Worker):
         # noinspection PyTypeChecker
         worker: SlideShowWorker = super().from_config(manager, config)
 
-        worker.root = config.get('root', worker.root)
-        worker.loop_interval = config.get('interval', worker.loop_interval)
+        worker.root = manager.resolve_path(config.get('Root', worker.root))
+        worker.loop_interval = config.get('Interval', worker.loop_interval)
 
         return worker

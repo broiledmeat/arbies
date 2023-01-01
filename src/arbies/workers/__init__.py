@@ -97,11 +97,11 @@ class Worker(ABC):
     def from_config(cls, manager: Manager, config: ConfigDict) -> Worker:
         worker = cls(manager)
 
-        worker.size = config.get('size', worker.size)
-        worker.position = config.get('position', worker.position)
-        worker.font = get_font(config.get('font', None), size=config.get('font_size', None))
+        worker.size = config.get('Size', worker.size)
+        worker.position = config.get('Position', worker.position)
+        worker.font = get_font(config.get('Font', None), size=config.get('FontSize', None))
 
-        font_fill = config.get('font_fill', None)
+        font_fill = config.get('FontFill', None)
         if isinstance(font_fill, str):
             worker.font_fill = font_fill
         elif isinstance(font_fill, list) and len(font_fill) >= 3:

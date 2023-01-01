@@ -43,10 +43,10 @@ class DateTimeWorker(Worker):
         # noinspection PyTypeChecker
         worker: DateTimeWorker = super().from_config(manager, config)
 
-        worker.format = config.get('format', worker.format)
-        worker.horizontal_alignment = HorizontalAlignment.convert_from(config.get('horizontal_alignment',
+        worker.format = config.get('Format', worker.format)
+        worker.horizontal_alignment = HorizontalAlignment.convert_from(config.get('HAlign',
                                                                                   worker.horizontal_alignment))
-        worker.vertical_alignment = VerticalAlignment.convert_from(config.get('vertical_alignment',
+        worker.vertical_alignment = VerticalAlignment.convert_from(config.get('VAlign',
                                                                               worker.vertical_alignment))
 
         return worker

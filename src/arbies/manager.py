@@ -101,7 +101,15 @@ class Manager:
 
         image = self._get_image()
         for worker, worker_image in self._update_worker_images.items():
-            image.paste(worker_image, worker.position)
+            # image.paste(worker_image, worker.position)
+            # Note: Image.Image.alpha_composite is broken. It attempts to concatenate tuples.
+            box = (worker.position[0],
+                   worker.position[1],
+                   worker.position[0] + worker.size[0],
+                   worker.position[1] + worker.size[1])
+            target = image.crop(box)
+            composite = Image.alpha_composite(target, worker_image)
+            image.paste(composite, box)
 
         for tray in self.trays:
             tray.serve(self._image)
@@ -119,24 +127,25 @@ class Manager:
         manager = cls()
         manager.config = config
 
-        display_config: ConfigDict = config.get('display', {})
-        manager._size = tuple(display_config.get('size', manager._size))
+        global_config: ConfigDict = config.get('Global', {})
+        manager._size = tuple(global_config.get('Size', manager._size))
+        manager._background_fill = global_config.get('BackgroundFill', manager._background_fill)
 
-        log_config: ConfigDict = config.get('log', {})
-        if 'path' in log_config:
-            handler = RotatingFileHandler(Manager._resolve_path(log_config['path']), maxBytes=2048)
+        log_path: Optional[str] = global_config.get('LogPath', None)
+        if log_path is not None:
+            handler = RotatingFileHandler(manager.resolve_path(log_path), maxBytes=2048)
             handler.setLevel(logging.INFO)
             handler.setFormatter(manager._log_formatter)
             manager.log.addHandler(handler)
 
-        for font_name, font_config in config.get('fonts', {}).items():
-            drawing.Font.load_from_config(font_name, font_config)
+        for item_name, item_config in config.get('Fonts', {}).items():
+            drawing.Font.load_from_config(item_name, item_config)
 
-        for package_name, module, manager_list in (('trays', trays, manager.trays),
-                                                   ('workers', workers, manager.workers)):
-            for item_config in config.get(package_name, []):
-                item_config: Dict
-                class_ = module.get(item_config['type'])
+        for section_name, module, manager_list in (('Trays', trays, manager.trays),
+                                                   ('Workers', workers, manager.workers)):
+            item_configs: List[ConfigDict] = config.get(section_name, {}).values()
+            for item_config in item_configs:
+                class_ = module.get(item_config['Type'])
                 instance = class_.from_config(manager, item_config)
                 manager_list.append(instance)
 
@@ -147,6 +156,6 @@ class Manager:
             self._image = Image.new('RGBA', self._size)
         return self._image
 
-    @staticmethod
-    def _resolve_path(path: str) -> str:
+    # noinspection PyMethodMayBeStatic
+    def resolve_path(self, path: str) -> str:
         return os.path.expanduser(os.path.expandvars(path))

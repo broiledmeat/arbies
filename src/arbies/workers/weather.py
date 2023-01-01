@@ -29,13 +29,13 @@ class WeatherWorker(Worker):
         draw = ImageDraw.Draw(image)
         period = weather.get_current_period(self.grid)
 
-        if self.style == 'temperature':
+        if self.style == 'Temperature':
             self._render_temperature(image, draw, period)
-        elif self.style == 'wind':
+        elif self.style == 'Wind':
             self._render_wind(image, draw, period)
-        elif self.style == 'forecast':
+        elif self.style == 'Forecast':
             self._render_forecast(image, draw, period)
-        elif self.style == 'long_forecast':
+        elif self.style == 'LongForecast':
             self._render_long_forecast(image, draw, period)
         else:
             raise ValueError(self.style)
@@ -86,12 +86,12 @@ class WeatherWorker(Worker):
         # noinspection PyTypeChecker
         worker: WeatherWorker = super().from_config(manager, config)
 
-        worker.style = config.get('style', worker.style)
+        worker.style = config.get('Style', worker.style)
 
-        if 'location' in config:
-            worker.location = weather.get_location_coords(config['location'])
-        elif 'locations' in manager.config and len(manager.config['locations']) >= 1:
-            first_location = list(manager.config['locations'].keys())[0]
+        if 'Location' in config:
+            worker.location = weather.get_location_coords(config['Location'])
+        elif 'Locations' in manager.config and len(manager.config['Locations']) >= 1:
+            first_location = list(manager.config['Locations'].keys())[0]
             worker.location = weather.get_location_coords(first_location)
 
         return worker

@@ -44,9 +44,9 @@ _cache_expire_time: int = 30 * 60
 
 
 def init_from_config(config: ConfigDict):
-    for name, location_config in config.get('locations', {}).items():
+    for name, location_config in config.get('Locations', {}).items():
         if name not in location_config:
-            _locations[name] = location_config['coords']
+            _locations[name] = location_config['Coords']
 
 
 def get_location_coords(name: str) -> GpsCoords:

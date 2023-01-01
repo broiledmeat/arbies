@@ -1,7 +1,7 @@
 import sys
 import os
 import argparse
-import json
+import toml
 from arbies.manager import Manager
 from typing import Optional
 
@@ -51,7 +51,7 @@ def main() -> int:
 
 def _get_manager(config_path) -> Optional[Manager]:
     with open(config_path, 'r') as config_file:
-        return Manager.from_config(json.load(config_file))
+        return Manager.from_config(toml.load(config_file))
 
 
 sys.exit(main())
