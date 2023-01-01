@@ -105,14 +105,13 @@ class Manager:
 
         image = self._get_image()
         for worker, worker_image in self._update_worker_images.items():
-            # image.paste(worker_image, worker.position)
-            # Note: Image.Image.alpha_composite is broken. It attempts to concatenate tuples.
+            # Note: Image.Image.alpha_composite *would* be what we want here, but it is broken, as it attempts to
+            # concatenate tuples.
             box = (worker.position[0],
                    worker.position[1],
                    worker.position[0] + worker.size[0],
                    worker.position[1] + worker.size[1])
-            target = image.crop(box)
-            composite = Image.alpha_composite(target, worker_image)
+            composite = Image.alpha_composite(image.crop(box), worker_image)
             image.paste(composite, box)
 
         for tray in self.trays:
