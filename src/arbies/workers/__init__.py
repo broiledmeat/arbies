@@ -43,6 +43,7 @@ class Worker(ABC):
         self.position: Tuple[int, int] = (0, 0)
         self.size: Tuple[int, int] = (100, 100)
         self.font: Font = get_font()
+        self.font_fill: ColorType = (0, 0, 0, 255)
 
         self.loop_interval: Optional[float] = None
         self._loop_timer: Optional[Timer] = None
@@ -99,5 +100,13 @@ class Worker(ABC):
         worker.size = config.get('size', worker.size)
         worker.position = config.get('position', worker.position)
         worker.font = get_font(config.get('font', None), size=config.get('font_size', None))
+
+        font_fill = config.get('font_fill', None)
+        if isinstance(font_fill, str):
+            worker.font_fill = font_fill
+        elif isinstance(font_fill, list) and len(font_fill) >= 3:
+            if len(font_fill) == 3:
+                font_fill += [255]
+            worker.font_fill = tuple(font_fill)
 
         return worker

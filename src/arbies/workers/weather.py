@@ -44,7 +44,7 @@ class WeatherWorker(Worker):
         self.serve(image)
 
     def _render_temperature(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
-        drawing.aligned_text(draw, self.font, f'{period.temperature}f', self.size,
+        drawing.aligned_text(draw, self.font, f'{period.temperature}f', self.font_fill, self.size,
                              horizontal_alignment=HorizontalAlignment.CENTER,
                              vertical_alignment=VerticalAlignment.CENTER)
 
@@ -52,7 +52,7 @@ class WeatherWorker(Worker):
         text = f'{period.wind_speed}mph'
 
         if period.wind_speed == 0:
-            drawing.aligned_text(draw, self.font, text, self.size,
+            drawing.aligned_text(draw, self.font, text, self.font_fill, self.size,
                                  horizontal_alignment=HorizontalAlignment.CENTER,
                                  vertical_alignment=VerticalAlignment.CENTER)
             return
@@ -67,16 +67,16 @@ class WeatherWorker(Worker):
 
         image.paste(icon, (x_offset, int((self.size[1] / 2) - (icon.height / 2))))
 
-        drawing.aligned_text(draw, self.font, text, self.size,
+        drawing.aligned_text(draw, self.font, text, self.font_fill, self.size,
                              offset=(x_offset + icon.width, 0),
                              vertical_alignment=VerticalAlignment.CENTER)
 
     def _render_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
-        drawing.aligned_wrapped_text(draw, self.font, period.short_forecast, self.size,
+        drawing.aligned_wrapped_text(draw, self.font, period.short_forecast, self.font_fill, self.size,
                                      horizontal_alignment=HorizontalAlignment.CENTER)
 
     def _render_long_forecast(self, image: Image.Image, draw: ImageDraw.Draw, period: weather.WeatherPeriod):
-        drawing.aligned_wrapped_text(draw, self.font, period.long_forecast, self.size,
+        drawing.aligned_wrapped_text(draw, self.font, period.long_forecast, self.font_fill, self.size,
                                      horizontal_alignment=HorizontalAlignment.CENTER)
 
     @classmethod

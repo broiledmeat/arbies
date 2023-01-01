@@ -92,6 +92,7 @@ def get_line_height(font: AnyFontType) -> float:
 def aligned_text(draw: ImageDraw.ImageDraw,
                  font: AnyFontType,
                  text: str,
+                 fill: ColorType,
                  area: Vector2Type,
                  offset: Optional[Vector2Type] = None,
                  horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
@@ -103,12 +104,13 @@ def aligned_text(draw: ImageDraw.ImageDraw,
         x += offset[0]
         y += offset[1]
 
-    draw.text((x, y), text, font=font)
+    draw.text((x, y), text, font=font, fill=fill)
 
 
 def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
                          font: AnyFontType,
                          text: str,
+                         fill: ColorType,
                          area: Vector2Type,
                          offset: Optional[Vector2Type] = None,
                          horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
@@ -174,6 +176,6 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
 
         x, _ = get_aligned_position(size, area, horizontal_alignment, VerticalAlignment.TOP)
 
-        draw.text((x, y), text, font=font)
+        draw.text((x, y), text, font=font, fill=fill)
 
         y += line_height

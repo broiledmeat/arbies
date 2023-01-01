@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Union, Tuple
 
 if TYPE_CHECKING:
     Vector2Type = Tuple[float, float]
+    ColorType = Union[str, int, tuple[int, int, int, int]]
 
 
 class _ConvertFromEnumMixin:
