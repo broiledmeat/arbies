@@ -7,7 +7,10 @@ import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from PIL import Image
-from typing import Optional, Union, Dict, Tuple, List
+from typing import TYPE_CHECKING, Optional, Union, Dict, Tuple, List
+
+if TYPE_CHECKING:
+    from arbies.drawing import ColorType
 
 ConfigDict = Dict[str, Union[str, int, float, List, 'ConfigDict']]
 
@@ -27,6 +30,7 @@ class Manager:
 
         self._size: Tuple[int, int] = (640, 384)
         self._image: Optional[Image.Image] = None
+        self._background_fill: ColorType = 0
 
         self._update_worker_images: Dict[Worker, Image.Image] = {}
 
@@ -153,7 +157,7 @@ class Manager:
 
     def _get_image(self) -> Image.Image:
         if self._image is None:
-            self._image = Image.new('RGBA', self._size)
+            self._image = Image.new('RGBA', self._size, self._background_fill)
         return self._image
 
     # noinspection PyMethodMayBeStatic
