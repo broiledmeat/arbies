@@ -5,12 +5,15 @@ from typing import Union, Optional, Tuple, List, Dict
 from ..manager import ConfigDict
 from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
 
+_default_font_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                       '../../../resources/fonts/RobotoCondensed-Regular.ttf'))
+
 
 class Font(ImageFont.FreeTypeFont):
     DEFAULT_SIZE: int = 14
     DEFAULT_LINE_HEIGHT: float = 1.2
 
-    def __init__(self, path, size: int = DEFAULT_SIZE, line_height: float = DEFAULT_LINE_HEIGHT):
+    def __init__(self, path: Union[str, bytes], size: int = DEFAULT_SIZE, line_height: float = DEFAULT_LINE_HEIGHT):
         super().__init__(font=path, size=size)
         self.line_height: float = line_height
 
@@ -45,26 +48,36 @@ class Font(ImageFont.FreeTypeFont):
 Vector2Type = Tuple[float, float]
 AnyFontType = Union[ImageFont.ImageFont, ImageFont.FreeTypeFont, Font]
 
-_default_font = ImageFont.load_default()
-_font_cache: Dict[str, AnyFontType] = {}
+_default_font: Optional[Font] = None
+_font_cache: Dict[str, Font] = {}
 
 
-def get_font(name: Optional[str] = None, size: Optional[int] = None) -> AnyFontType:
-    if name is not None and name not in _font_cache:
-        raise ValueError(f'No font named "{name}"')
+def _get_default_font() -> Font:
+    global _default_font
 
-    font: AnyFontType = _font_cache[name] if name is not None else _default_font
+    if _default_font is None:
+        _default_font = Font(_default_font_path)
+
+    return _default_font
+
+
+def get_font(name: Optional[str] = None, size: Optional[int] = None) -> Font:
+    font: Font
+
+    if name is not None:
+        if name not in _font_cache:
+            raise ValueError(f'No font named "{name}"')
+        font = _font_cache[name]
+    else:
+        font = _get_default_font()
 
     if size is not None:
-        if isinstance(font, Font):
-            return font.with_size(size)
-        elif isinstance(font, ImageFont.FreeTypeFont):
-            return ImageFont.FreeTypeFont(font=font.font, size=font.size)
+        return font.with_size(size)
 
     return font
 
 
-def get_line_height(font: AnyFontType) -> int:
+def get_line_height(font: AnyFontType) -> float:
     if isinstance(font, Font):
         return font.getmetrics()[0] * font.line_height
     elif isinstance(font, ImageFont.FreeTypeFont):
