@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import io
-from PIL import Image, ImageOps
+from PIL import Image, ImageColor
 import cairosvg
 from typing import TYPE_CHECKING, Callable, Optional, Iterable, Tuple, Dict
 from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
@@ -27,8 +27,6 @@ def get_icon(name: str, size: Optional[Vector2Type] = None) -> Image.Image:
 
     image = Image.open(stream)
     image.load()
-
-    image = ImageOps.invert(image.getchannel('A'))
 
     _icon_cache[key] = image
 
