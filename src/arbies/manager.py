@@ -7,7 +7,7 @@ import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from PIL import Image
-from typing import Union, Dict, Tuple, List
+from typing import Optional, Union, Dict, Tuple, List
 
 ConfigDict = Dict[str, Union[str, int, float, List, 'ConfigDict']]
 
@@ -26,7 +26,7 @@ class Manager:
         self._is_cancelling_loop: bool = False
 
         self._size: Tuple[int, int] = (640, 384)
-        self._image = Image.new('1', self._size, 1)
+        self._image: Optional[Image.Image] = None
 
         self._update_worker_images: Dict[Worker, Image.Image] = {}
 
@@ -99,8 +99,9 @@ class Manager:
         for worker in self.workers:
             worker.try_render()
 
-        for worker, image in self._update_worker_images.items():
-            self._image.paste(image, worker.position)
+        image = self._get_image()
+        for worker, worker_image in self._update_worker_images.items():
+            image.paste(worker_image, worker.position)
 
         for tray in self.trays:
             tray.serve(self._image)
@@ -119,7 +120,7 @@ class Manager:
         manager.config = config
 
         display_config: ConfigDict = config.get('display', {})
-        manager._size = display_config.get('size', manager._size)
+        manager._size = tuple(display_config.get('size', manager._size))
 
         log_config: ConfigDict = config.get('log', {})
         if 'path' in log_config:
@@ -140,6 +141,11 @@ class Manager:
                 manager_list.append(instance)
 
         return manager
+
+    def _get_image(self) -> Image.Image:
+        if self._image is None:
+            self._image = Image.new('RGBA', self._size)
+        return self._image
 
     @staticmethod
     def _resolve_path(path: str) -> str:
