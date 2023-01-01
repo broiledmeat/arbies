@@ -1,16 +1,19 @@
 from __future__ import annotations
 import os
 import io
-from PIL import Image, ImageFont, ImageOps
+from PIL import Image, ImageOps
 import cairosvg
-from typing import Callable, Optional, Iterable, Tuple, Dict
-from ._consts import Vector2Type, HorizontalAlignment, VerticalAlignment, get_aligned_position
+from typing import TYPE_CHECKING, Callable, Optional, Iterable, Tuple, Dict
+from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
 from .font import Font, get_font, get_line_height, aligned_text, aligned_wrapped_text
+
+if TYPE_CHECKING:
+    from ._consts import Vector2Type, ColorType
 
 _icon_cache: Dict[Tuple[str, Vector2Type], Image.Image] = {}
 
 
-def get_icon(name: str, size: Optional[Vector2Type] = None) -> ImageFont.Image:
+def get_icon(name: str, size: Optional[Vector2Type] = None) -> Image.Image:
     size: Vector2Type = size or (32, 32)
     key = (name, size)
 

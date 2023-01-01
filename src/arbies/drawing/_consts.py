@@ -1,9 +1,10 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Union, Tuple
+from typing import TYPE_CHECKING, Union, Tuple
 
 
-Vector2Type = Tuple[float, float]
+if TYPE_CHECKING:
+    Vector2Type = Tuple[float, float]
 
 
 class _ConvertFromEnumMixin:

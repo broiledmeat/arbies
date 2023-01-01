@@ -8,7 +8,11 @@ from PIL import Image, ImageDraw
 from arbies import import_module_class_from_fullname
 from arbies.manager import Manager, ConfigDict
 from arbies.drawing import Font, get_font
-from typing import Type, Optional, Dict, Tuple, List
+from typing import TYPE_CHECKING, Type, Optional, Dict, Tuple, List
+
+if TYPE_CHECKING:
+    from arbies.drawing import ColorType
+
 
 _registered: Dict[str, str] = {
     'datetime': 'arbies.workers.datetime.DateTimeWorker',

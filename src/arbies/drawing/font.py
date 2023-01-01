@@ -1,9 +1,12 @@
 from __future__ import annotations
 import os
 from PIL import ImageDraw, ImageFont
-from typing import Union, Optional, Tuple, List, Dict
+from typing import TYPE_CHECKING, Union, Optional, Tuple, List, Dict
 from ..manager import ConfigDict
 from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
+
+if TYPE_CHECKING:
+    from . import Vector2Type, ColorType
 
 _default_font_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                        '../../../resources/fonts/RobotoCondensed-Regular.ttf'))
@@ -45,7 +48,6 @@ class Font(ImageFont.FreeTypeFont):
         return font
 
 
-Vector2Type = Tuple[float, float]
 AnyFontType = Union[ImageFont.ImageFont, ImageFont.FreeTypeFont, Font]
 
 _default_font: Optional[Font] = None
