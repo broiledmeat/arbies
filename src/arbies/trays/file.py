@@ -27,6 +27,8 @@ class FileTray(Tray):
         # noinspection PyTypeChecker
         tray: FileTray = super().from_config(manager, config)
 
+        tray.format = config.get('Format', tray.format)
+        tray.mode = config.get('Mode', tray.mode)
         tray.path = manager.resolve_path(config.get('Path', tray.path))
 
         return tray
