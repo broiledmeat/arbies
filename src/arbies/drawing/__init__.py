@@ -61,3 +61,13 @@ def draw_image(dest: Image.Image,
         y += offset[1]
 
     dest.paste(source, (int(x), int(y)))
+
+
+def as_color(value: ColorType) -> ColorType:
+    if isinstance(value, tuple):
+        return value
+    elif isinstance(value, list):
+        return tuple(value)
+    elif isinstance(value, str):
+        return ImageColor.getrgb(value)
+    raise ValueError(value)

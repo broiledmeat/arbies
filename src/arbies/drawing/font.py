@@ -10,12 +10,12 @@ if TYPE_CHECKING:
 
 
 class Font(ImageFont.FreeTypeFont):
-    DEFAULT_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                     '../../../resources/fonts/RobotoCondensed-Regular.ttf'))
-    DEFAULT_SIZE: int = 14
-    DEFAULT_LINE_HEIGHT: float = 1.2
+    _default_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                      '../../../resources/fonts/RobotoCondensed-Regular.ttf'))
+    _default_size: int = 14
+    _default_line_height: float = 1.2
 
-    def __init__(self, path: Union[str, bytes], size: int = DEFAULT_SIZE, line_height: float = DEFAULT_LINE_HEIGHT):
+    def __init__(self, path: Union[str, bytes], size: int = _default_size, line_height: float = _default_line_height):
         super().__init__(font=path, size=size)
         self.line_height: float = line_height
 
@@ -28,9 +28,9 @@ class Font(ImageFont.FreeTypeFont):
     def load_from_config(cls, name: str, config: ConfigDict) -> Font:
         global _default_font
 
-        path = config.get('Path', Font.DEFAULT_PATH)
-        size = config.get('Size', Font.DEFAULT_SIZE)
-        line_height = config.get('LineHeight', Font.DEFAULT_LINE_HEIGHT)
+        path = config.get('Path', Font._default_path)
+        size = config.get('Size', Font._default_size)
+        line_height = config.get('LineHeight', Font._default_line_height)
 
         if name is None or len(name) == 0:
             raise ValueError(f'Font name is either not defined or is blank.')
@@ -57,7 +57,8 @@ def _get_default_font() -> Font:
     global _default_font
 
     if _default_font is None:
-        _default_font = Font(Font.DEFAULT_PATH)
+        # noinspection PyProtectedMember
+        _default_font = Font(Font._default_path)
 
     return _default_font
 
@@ -82,7 +83,8 @@ def get_line_height(font: AnyFontType) -> float:
     if isinstance(font, Font):
         return font.getmetrics()[0] * font.line_height
     elif isinstance(font, ImageFont.FreeTypeFont):
-        return font.getmetrics()[0] * Font.DEFAULT_LINE_HEIGHT
+        # noinspection PyProtectedMember
+        return font.getmetrics()[0] * Font._default_line_height
     elif isinstance(font, ImageFont.ImageFont):
         return font.getsize('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[1]
     raise TypeError(font)

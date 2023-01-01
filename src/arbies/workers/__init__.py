@@ -7,7 +7,7 @@ import traceback
 from PIL import Image, ImageDraw
 from arbies import import_module_class_from_fullname
 from arbies.manager import Manager, ConfigDict
-from arbies.drawing import Font, get_font
+from arbies.drawing import Font, get_font, as_color
 from typing import TYPE_CHECKING, Type, Optional, Dict, Tuple, List
 
 if TYPE_CHECKING:
@@ -100,13 +100,5 @@ class Worker(ABC):
         worker.size = config.get('Size', worker.size)
         worker.position = config.get('Position', worker.position)
         worker.font = get_font(config.get('Font', None), size=config.get('FontSize', None))
-
-        font_fill = config.get('FontFill', None)
-        if isinstance(font_fill, str):
-            worker.font_fill = font_fill
-        elif isinstance(font_fill, list) and len(font_fill) >= 3:
-            if len(font_fill) == 3:
-                font_fill += [255]
-            worker.font_fill = tuple(font_fill)
-
+        worker.font_fill = as_color(config.get('FontFill', worker.font_fill))
         return worker
