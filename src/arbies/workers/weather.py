@@ -25,7 +25,7 @@ class WeatherWorker(Worker):
         self.grid: weather.GpsCoords = weather.GpsCoords(42.865, -73.771)  # Albany
 
     def render(self):
-        image = Image.new('1', self.size, 1)
+        image = Image.new('RGBA', self.size)
         draw = ImageDraw.Draw(image)
         period = weather.get_current_period(self.grid)
 

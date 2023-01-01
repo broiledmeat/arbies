@@ -28,7 +28,7 @@ class DateTimeWorker(Worker):
 
         self._last_text = text
 
-        image = Image.new('1', self.size, 1)
+        image = Image.new('RGBA', self.size, 1)
         draw = ImageDraw.Draw(image)
 
         drawing.aligned_text(draw, self.font, text, self.size,

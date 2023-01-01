@@ -29,21 +29,12 @@ class SlideShowWorker(Worker):
         if not os.path.isfile(path):
             return
 
-        image = Image.new('1', self.size, 1)
-
-        def smooth(source: Image.Image) -> Image.Image:
-            return source.copy().filter(ImageFilter.SMOOTH_MORE)
-
-        def edges(source: Image.Image) -> Image.Image:
-            return source.copy().filter(ImageFilter.EDGE_ENHANCE_MORE)
-
+        image = Image.new('RGBA', self.size)
         drawing.draw_image(image,
                            Image.open(path),
                            resize=True,
                            horizontal_alignment=HorizontalAlignment.CENTER,
-                           vertical_alignment=VerticalAlignment.CENTER,
-                           pre_processors=[smooth],
-                           post_processors=[edges, dithering.error_diffusion_dither])
+                           vertical_alignment=VerticalAlignment.CENTER)
         self.serve(image)
 
     @classmethod

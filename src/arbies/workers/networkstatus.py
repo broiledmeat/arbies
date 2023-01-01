@@ -15,7 +15,7 @@ class NetworkStatusWorker(Worker):
         self.interface: Optional[str] = None
 
     def render(self):
-        image = Image.new('1', self.size, 1)
+        image = Image.new('RGBA', self.size)
 
         icon_name: str = 'wifi-off'
         state_path: Path = Path(f'/sys/class/net/{self.interface}/operstate')

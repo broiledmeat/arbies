@@ -28,7 +28,7 @@ def get_icon(name: str, size: Optional[Vector2Type] = None) -> Image.Image:
     image = Image.open(stream)
     image.load()
 
-    image = ImageOps.invert(image.getchannel('A')).convert('1')
+    image = ImageOps.invert(image.getchannel('A'))
 
     _icon_cache[key] = image
 

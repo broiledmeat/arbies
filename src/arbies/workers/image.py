@@ -15,7 +15,7 @@ class ImageWorker(Worker):
         self.path: Optional[str] = None
 
     def render(self):
-        image = Image.new('1', self.size, 1)
+        image = Image.new('RGBA', self.size)
         drawing.draw_image(image,
                            Image.open(self.path),
                            resize=True,
