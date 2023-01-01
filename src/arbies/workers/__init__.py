@@ -80,12 +80,13 @@ class Worker(ABC):
             self.manager.log.error(traceback.format_exc())
 
     def _render_exceptioned(self):
-        image = Image.new('1', self.size, 1)
+        image = Image.new('RGBA', self.size, 1)
         draw = ImageDraw.Draw(image)
 
+        draw.rectangle((0, 0, self.size[0], self.size[1]), (200, 200, 0, 128))
+
         for x in range(5, max(*self.size) * 2, 10):
-            draw.line(((x, 0), (0, x)))
-            draw.line(((x + 1, 0), (0, x + 1)))
+            draw.line(((x, 0), (0, x)), (200, 0, 0), 2)
 
         del draw
         self.serve(image)
