@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 _registered: Dict[str, str] = {
     'file': 'arbies.trays.file.FileTray',
-    'waveshareepd': 'arbies.trays.waveshareepd.WaveShareEPDTray'
+    'waveshareepd': 'arbies.trays.waveshareepd.WaveShareEPDTray',
+    'waveshareit8951hat': 'arbies.trays.waveshareit8951hat.WaveShareIT8951HATTray',
 }
 
 
