@@ -4,7 +4,10 @@ from _collections import defaultdict
 from PIL import Image
 from arbies import import_module_class_from_fullname
 from arbies.manager import Manager, ConfigDict
-from typing import Type, Optional, Dict, List
+from typing import TYPE_CHECKING, Type, Optional, Dict, List
+
+if TYPE_CHECKING:
+    from arbies.drawing.geometry import Box
 
 _registered: Dict[str, str] = {
     'file': 'arbies.trays.file.FileTray',
@@ -25,17 +28,21 @@ class Tray(ABC):
             name = name[:-len(Tray.__name__)]
 
         Tray._instances[name].append(self)
-        self.label = f'{name}[{len(Tray._instances[name]) - 1}]'
 
-        self.manager = manager
+        self._manager: Manager = manager
+        self._label: str = f'{name}[{len(Tray._instances[name]) - 1}]'
 
-    def startup(self):
+    @property
+    def supports_partial_serve(self) -> bool:
+        return self._supports_partial_serve
+
+    async def startup(self):
         pass
 
-    def shutdown(self):
+    async def shutdown(self):
         pass
 
-    def serve(self, image: Image.Image):
+    async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
         raise NotImplemented
 
     @classmethod

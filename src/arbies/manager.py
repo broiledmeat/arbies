@@ -1,38 +1,36 @@
 from __future__ import annotations
 import sys
 import os
-from datetime import datetime
-import time
+import asyncio
 import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
-from PIL import Image
-from typing import TYPE_CHECKING, Optional, Union, Dict, Tuple, List
+from PIL import Image, ImageDraw
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
+    from arbies.drawing.geometry import Box
     from arbies.drawing import ColorType
+    from arbies.trays import Tray
+    from arbies.workers import Worker
 
-ConfigDict = Dict[str, Union[str, int, float, List, 'ConfigDict']]
+ConfigDict = dict[str, Union[str, int, float, list, 'ConfigDict']]
 
 
 class Manager:
     def __init__(self):
-        from arbies.trays import Tray
-        from arbies.workers import Worker
-
         self.config: ConfigDict = {}
         self.log: logging.Logger = logging.getLogger('arbies')
-        self.trays: List[Tray] = []
-        self.workers: List[Worker] = []
+        self.trays: list[Tray] = []
+        self.workers: list[Worker] = []
 
-        self.is_looping: bool = False
-        self._is_cancelling_loop: bool = False
-
-        self._size: Tuple[int, int] = (640, 384)
+        self._size: tuple[int, int] = (640, 384)
         self._image: Optional[Image.Image] = None
         self._background_fill: ColorType = 0
 
-        self._update_worker_images: Dict[Worker, Image.Image] = {}
+        self._worker_update_lock: asyncio.Lock = asyncio.Lock()
+        self._worker_images: dict[Worker, Optional[Image.Image]] = {}
+        self._updated_workers: set[Worker] = set()
 
         self.log.setLevel(logging.DEBUG)
         handler = StreamHandler(sys.stdout)
@@ -43,85 +41,99 @@ class Manager:
         handler.setFormatter(self._log_formatter)
 
     @property
-    def size(self):
+    def size(self) -> tuple[int, int]:
         return tuple(self._size)
 
-    def _startup(self):
-        for tray in self.trays:
-            tray.startup()
+    @property
+    def image(self) -> Image.Image:
+        if self._image is None:
+            self._image = Image.new('RGBA', self._size, self._background_fill)
+        return self._image
+
+    async def render_once(self):
+        await self._startup()
+        await asyncio.gather(*(worker.render_once() for worker in self.workers))
 
         for worker in self.workers:
-            worker.startup()
+            worker_image: Optional[Image.Image] = self._worker_images.get(worker, None)
+            if worker_image is not None:
+                self._composite_image(worker_image, self.image, worker.box)
 
-    def _shutdown(self):
-        for worker in self.workers:
-            worker.shutdown()
+        await asyncio.gather(*(tray.serve(self._image) for tray in self.trays))
+        await self._shutdown()
 
-        for tray in self.trays:
-            tray.shutdown()
-
-    def loop(self):
-        self._startup()
-
-        for worker in self.workers:
-            worker.loop()
-
-        self._loop()
-
-    def cancel_loop(self):
-        self._is_cancelling_loop = True
-
-    def _loop(self):
-        self.is_looping = True
+    async def render_loop(self):
+        await self._startup()
+        worker_loops: tuple[asyncio.Task, ...] = tuple()
 
         try:
-            while not self._is_cancelling_loop:
-                if len(self._update_worker_images) == 0:
-                    time.sleep(1)
-                    continue
+            manager_image = self.image
+            worker_loops = tuple(asyncio.create_task(worker.render_loop()) for worker in self.workers)
 
-                for worker, image in list(self._update_worker_images.items()):
-                    self._image.paste(image, worker.position)
-                    del self._update_worker_images[worker]
+            while True:
+                try:
+                    await self._worker_update_lock.acquire()
+                    updated_workers: list[Worker] = list(self._updated_workers)
+                    updated_boxes: list[Box] = [worker.box for worker in self._updated_workers]
 
-                time.sleep(3)
+                    if len(updated_workers) == 0:
+                        await asyncio.sleep(5)
+                        continue
 
-                if len(self._update_worker_images) > 0:
-                    continue
+                    self._updated_workers.clear()
+                finally:
+                    self._worker_update_lock.release()
 
-                for tray in self.trays:
-                    self.log.debug(f'[{datetime.now()}] Serving {tray.label}')
-                    tray.serve(self._image)
+                self._clear(self.image)
+                for worker in self.workers:
+                    worker_image: Optional[Image.Image] = self._worker_images.get(worker, None)
+                    if worker_image is not None:
+                        self._composite_image(worker_image, self.image, worker.box)
+
+                # TODO: full or partial serve
+                await asyncio.gather(*(tray.serve(manager_image, updated_boxes) for tray in self.trays))
+        except asyncio.CancelledError:
+            pass
         finally:
-            self.is_looping = False
-            self._is_cancelling_loop = False
-            self._shutdown()
+            for worker_loop in worker_loops:
+                worker_loop.cancel()
+            await asyncio.gather(*worker_loops)
+            await self._shutdown()
 
-    def render_once(self):
-        self._startup()
+    async def _startup(self):
+        await asyncio.gather(*(tray.startup() for tray in self.trays))
+        await asyncio.gather(*(worker.startup() for worker in self.workers))
 
-        for worker in self.workers:
-            worker.try_render()
+    async def _shutdown(self):
+        await asyncio.gather(*(worker.shutdown() for worker in self.workers))
+        await asyncio.gather(*(tray.shutdown() for tray in self.trays))
 
-        image = self._get_image()
-        for worker, worker_image in self._update_worker_images.items():
-            # Note: Image.Image.alpha_composite *would* be what we want here, but it is broken, as it attempts to
-            # concatenate tuples.
-            box = (worker.position[0],
-                   worker.position[1],
-                   worker.position[0] + worker.size[0],
-                   worker.position[1] + worker.size[1])
-            composite = Image.alpha_composite(image.crop(box), worker_image)
-            image.paste(composite, box)
+    @staticmethod
+    def _clear(target: Image.Image):
+        draw = ImageDraw.Draw(target)
+        draw.rectangle((0, 0, target.width, target.height), fill=(255, 255, 255, 255))
 
-        for tray in self.trays:
-            tray.serve(self._image)
+    @staticmethod
+    def _paste_image(source: Image.Image, target: Image.Image, target_box: Box):
+        target.paste(source, target_box)
 
-        self._shutdown()
+    @staticmethod
+    def _composite_image(source: Image.Image, target: Image.Image, target_box: Box):
+        # Note: Image.Image.alpha_composite *would* be what we want here, but it is broken, as it attempts to
+        # concatenate tuples.
+        cropped = target.crop(target_box)
+        composite = Image.alpha_composite(cropped, source)
+        target.paste(composite, target_box)
 
-    def update_worker_image(self, worker, image: Image.Image):
+    async def update_worker_image(self, worker: Worker, image: Image.Image):
         self.log.debug(f'Updating {worker.label}')
-        self._update_worker_images[worker] = image
+        self._worker_images[worker] = image
+
+        try:
+            await self._worker_update_lock.acquire()
+            self._updated_workers.add(worker)
+        finally:
+            self._worker_update_lock.release()
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Manager:
@@ -146,18 +158,13 @@ class Manager:
 
         for section_name, module, manager_list in (('Trays', trays, manager.trays),
                                                    ('Workers', workers, manager.workers)):
-            item_configs: List[ConfigDict] = config.get(section_name, {}).values()
+            item_configs: list[ConfigDict] = config.get(section_name, {}).values()
             for item_config in item_configs:
                 class_ = module.get(item_config['Type'])
                 instance = class_.from_config(manager, item_config)
                 manager_list.append(instance)
 
         return manager
-
-    def _get_image(self) -> Image.Image:
-        if self._image is None:
-            self._image = Image.new('RGBA', self._size, self._background_fill)
-        return self._image
 
     # noinspection PyMethodMayBeStatic
     def resolve_path(self, path: str) -> str:

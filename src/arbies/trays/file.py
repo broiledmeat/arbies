@@ -1,8 +1,11 @@
 from __future__ import annotations
-import os
 from PIL import Image
 from arbies.manager import Manager, ConfigDict
 from . import Tray
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from arbies.drawing.geometry import Box
 
 
 class FileTray(Tray):
@@ -17,10 +20,10 @@ class FileTray(Tray):
         self.mode: str = self._default_mode
         self.path: str = manager.resolve_path(f'{self._default_filename}.{self._default_format.lower()}')
 
-    def serve(self, image: Image.Image):
+    async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
         target = image if image.mode == self.mode else image.copy().convert(self.mode)
         target.save(self.path, self.format)
-        self.manager.log.info(f'Wrote {self.path} ({self.format}, {self.mode})')
+        self._manager.log.info(f'Wrote {self.path} ({self.format}, {self.mode})')
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> FileTray:

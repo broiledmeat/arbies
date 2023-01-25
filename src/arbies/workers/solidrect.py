@@ -15,17 +15,16 @@ class SolidRectWorker(Worker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self.fill: ColorType = self._default_fill
+        self._fill: ColorType = self._default_fill
 
-    def render(self):
-        image = Image.new('RGBA', self.size, self.fill)
-        self.serve(image)
+    async def _render_internal(self):
+        return Image.new('RGBA', self._size, self._fill)
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> SolidRectWorker:
         # noinspection PyTypeChecker
         worker: SolidRectWorker = super().from_config(manager, config)
 
-        worker.fill = as_color(config.get('Fill', worker.fill))
+        worker._fill = as_color(config.get('Fill', worker._fill))
 
         return worker

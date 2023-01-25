@@ -11,27 +11,26 @@ class NetworkStatusWorker(Worker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self.loop_interval = 0.5 * 60
-        self.interface: Optional[str] = None
+        self._interface: Optional[str] = None
 
-    def render(self):
-        image = Image.new('RGBA', self.size)
+    async def _render_internal(self) -> Image.Image:
+        image = Image.new('RGBA', self._size)
 
         icon_name: str = 'wifi-off'
-        state_path: Path = Path(f'/sys/class/net/{self.interface}/operstate')
+        state_path: Path = Path(f'/sys/class/net/{self._interface}/operstate')
 
         if state_path.is_file() and state_path.read_bytes() == b'up\n':
             icon_name = 'wifi'
 
-        image.paste(drawing.get_icon(icon_name, tuple(self.size)))
+        image.paste(drawing.get_icon(icon_name, tuple(self._size)))
 
-        self.serve(image)
+        return image
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> NetworkStatusWorker:
         # noinspection PyTypeChecker
         worker: NetworkStatusWorker = super().from_config(manager, config)
 
-        worker.interface = config.get('Interface', worker.interface)
+        worker._interface = config.get('Interface', worker._interface)
 
         return worker

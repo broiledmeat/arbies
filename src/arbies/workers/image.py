@@ -11,23 +11,22 @@ class ImageWorker(Worker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self.loop_interval = 0.5 * 60
-        self.path: Optional[str] = None
+        self._path: Optional[str] = None
 
-    def render(self):
-        image = Image.new('RGBA', self.size)
+    async def _render_internal(self) -> Image.Image:
+        image = Image.new('RGBA', self._size)
         drawing.draw_image(image,
-                           Image.open(self.path),
+                           Image.open(self._path),
                            resize=True,
                            horizontal_alignment=HorizontalAlignment.CENTER,
                            vertical_alignment=VerticalAlignment.CENTER)
-        self.serve(image)
+        return image
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> ImageWorker:
         # noinspection PyTypeChecker
         worker: ImageWorker = super().from_config(manager, config)
 
-        worker.path = config.get('Path', worker.path)
+        worker._path = manager.resolve_path(config.get('Path', worker._path))
 
         return worker

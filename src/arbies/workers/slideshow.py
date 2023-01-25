@@ -1,9 +1,8 @@
 from __future__ import annotations
-import os
-from PIL import Image, ImageFilter
+from PIL import Image
 from typing import Optional
 from arbies import drawing
-from arbies.drawing import HorizontalAlignment, VerticalAlignment, dithering
+from arbies.drawing import HorizontalAlignment, VerticalAlignment
 from arbies.manager import Manager, ConfigDict
 from arbies.suppliers.filesystem import DirectoryIterator, DirectoryIterationMethod, get_dir_iterator
 from arbies.workers import Worker
@@ -13,36 +12,32 @@ class SlideShowWorker(Worker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self.loop_interval: float = 60.0
-        self.root: Optional[str] = None
+        self._loop_interval: float = 60.0
+        self._root: Optional[str] = None
 
         self._path_iterator: Optional[DirectoryIterator] = None
 
-    def render(self):
+    async def _render_internal(self):
         if self._path_iterator is None:
-            self._path_iterator = get_dir_iterator(self.root,
+            self._path_iterator = get_dir_iterator(self._root,
                                                    method=DirectoryIterationMethod.Random,
                                                    filter_=r'.*\.(jpg|jpeg|png)$')
 
         path: str = next(self._path_iterator)
-
-        if not os.path.isfile(path):
-            return
-
-        image = Image.new('RGBA', self.size)
+        image = Image.new('RGBA', self._size)
         drawing.draw_image(image,
                            Image.open(path),
                            resize=True,
                            horizontal_alignment=HorizontalAlignment.CENTER,
                            vertical_alignment=VerticalAlignment.CENTER)
-        self.serve(image)
+        return image
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> SlideShowWorker:
         # noinspection PyTypeChecker
         worker: SlideShowWorker = super().from_config(manager, config)
 
-        worker.root = manager.resolve_path(config.get('Root', worker.root))
-        worker.loop_interval = config.get('Interval', worker.loop_interval)
+        worker._root = manager.resolve_path(config.get('Root', worker._root))
+        worker._loop_interval = config.get('Interval', worker._loop_interval)
 
         return worker
