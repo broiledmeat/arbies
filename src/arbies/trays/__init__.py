@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 _registered: Dict[str, str] = {
     'file': 'arbies.trays.file.FileTray',
+    'framebuffer': 'arbies.trays.framebuffer.FramebufferTray',
     'tk': 'arbies.trays.tk.TkTray',
     'waveshareepd': 'arbies.trays.waveshareepd.WaveShareEPDTray',
     'waveshareit8951hat': 'arbies.trays.waveshareit8951hat.WaveShareIT8951HATTray',
