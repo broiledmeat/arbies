@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import os
 import asyncio
+from datetime import datetime
 import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
@@ -31,6 +32,7 @@ class Manager:
         self._worker_update_lock: asyncio.Lock = asyncio.Lock()
         self._worker_images: dict[Worker, Optional[Image.Image]] = {}
         self._updated_workers: set[Worker] = set()
+        self._render_loop_interval: float = 15.0
 
         self.log.setLevel(logging.DEBUG)
         handler = StreamHandler(sys.stdout)
@@ -71,13 +73,15 @@ class Manager:
             worker_loops = tuple(asyncio.create_task(worker.render_loop()) for worker in self.workers)
 
             while True:
+                # Wait until every HH:MM:??, where ?? is the seconds cleanly divisible by _render_loop_interval.
+                await asyncio.sleep(self._render_loop_interval - (datetime.now().second % self._render_loop_interval))
+
                 try:
                     await self._worker_update_lock.acquire()
                     updated_workers: list[Worker] = list(self._updated_workers)
                     updated_boxes: list[Box] = [worker.box for worker in self._updated_workers]
 
                     if len(updated_workers) == 0:
-                        await asyncio.sleep(5)
                         continue
 
                     self._updated_workers.clear()
