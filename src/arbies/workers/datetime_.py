@@ -1,29 +1,20 @@
 from __future__ import annotations
-
-import asyncio
-
 from PIL import Image, ImageDraw
 from typing import Optional
 from arbies.manager import Manager, ConfigDict
-from arbies.workers import Worker
+from arbies.workers import LoopIntervalWorker
 from arbies.suppliers import datetime as adt
 from arbies import drawing
 from arbies.drawing import HorizontalAlignment, VerticalAlignment
 
 
-class DateTimeWorker(Worker):
+class DateTimeWorker(LoopIntervalWorker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self._update_interval_s: float = 30
         self._format: Optional[str] = None
         self._horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT
         self._vertical_alignment: VerticalAlignment = VerticalAlignment.TOP
-
-    async def render_loop(self):
-        while True:
-            await self.render_once()
-            await asyncio.sleep(self._update_interval_s)
 
     async def _render_internal(self) -> Image.Image:
         now = adt.now_tz()
@@ -47,7 +38,6 @@ class DateTimeWorker(Worker):
         # noinspection PyTypeChecker
         worker: DateTimeWorker = super().from_config(manager, config)
 
-        worker._update_interval_s = float(config.get('Interval', worker._update_interval_s))
         worker._format = config.get('Format', worker._format)
         worker._horizontal_alignment = HorizontalAlignment.convert_from(
             config.get('HAlign', worker._horizontal_alignment))

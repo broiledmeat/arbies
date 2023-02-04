@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from arbies.drawing import ColorType
 
 _registered: dict[str, str] = {
-    'datetime': 'arbies.workers.datetime.DateTimeWorker',
+    'datetime': 'arbies.workers.datetime_.DateTimeWorker',
     'image': 'arbies.workers.image.ImageWorker',
     'networkstatus': 'arbies.workers.networkstatus.NetworkStatusWorker',
     'slideshow': 'arbies.workers.slideshow.SlideShowWorker',

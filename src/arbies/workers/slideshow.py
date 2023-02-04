@@ -5,16 +5,14 @@ from arbies import drawing
 from arbies.drawing import HorizontalAlignment, VerticalAlignment
 from arbies.manager import Manager, ConfigDict
 from arbies.suppliers.filesystem import DirectoryIterator, DirectoryIterationMethod, get_dir_iterator
-from arbies.workers import Worker
+from arbies.workers import LoopIntervalWorker
 
 
-class SlideShowWorker(Worker):
+class SlideShowWorker(LoopIntervalWorker):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self._loop_interval: float = 60.0
         self._root: Optional[str] = None
-
         self._path_iterator: Optional[DirectoryIterator] = None
 
     async def _render_internal(self):
@@ -38,6 +36,5 @@ class SlideShowWorker(Worker):
         worker: SlideShowWorker = super().from_config(manager, config)
 
         worker._root = manager.resolve_path(config.get('Root', worker._root))
-        worker._loop_interval = config.get('Interval', worker._loop_interval)
 
         return worker
