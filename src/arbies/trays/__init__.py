@@ -34,10 +34,6 @@ class Tray(ABC):
         self._manager: Manager = manager
         self._label: str = f'{name}[{len(Tray._instances[name]) - 1}]'
 
-    @property
-    def supports_partial_serve(self) -> bool:
-        return self._supports_partial_serve
-
     async def startup(self):
         pass
 
