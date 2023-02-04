@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from abc import ABC
 from collections import defaultdict
 import traceback
@@ -98,5 +99,42 @@ class Worker(ABC):
         worker._position = Vector2(config.get('Position', worker._position))
         worker._font = get_font(config.get('Font', None), size=config.get('FontSize', None))
         worker._font_fill = as_color(config.get('FontFill', worker._font_fill))
+
+        return worker
+
+
+class LoopIntervalWorker(Worker):
+    def __init__(self, manager: Manager):
+        super().__init__(manager)
+
+        self._on_start: bool = True
+        self._cron_interval: str = '*/1 * * * *'
+
+    async def render_loop(self):
+        from datetime import datetime
+        from croniter import croniter
+
+        if self._on_start:
+            await self.render_once()
+
+        delay: int = 0
+        time_next: datetime = datetime.now()
+        time_iter: croniter = croniter(self._cron_interval, time_next)
+        while True:
+            now = datetime.now()
+            while time_next <= now or delay <= 0:
+                time_next = time_iter.next(datetime)
+                delay = (time_next - now).seconds
+            self._manager.log.debug(f'Awaiting {self.label} until {time_next} ({delay} seconds)')
+            await asyncio.sleep(delay)
+            await self.render_once()
+
+    @classmethod
+    def from_config(cls, manager: Manager, config: ConfigDict) -> LoopIntervalWorker:
+        # noinspection PyTypeChecker
+        worker: LoopIntervalWorker = super().from_config(manager, config)
+
+        worker._on_start = bool(config.get('OnStart', worker._on_start))
+        worker._cron_interval = config.get('Interval', worker._cron_interval)
 
         return worker
