@@ -9,7 +9,7 @@ from typing import Optional
 
 async def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', default='~/.arbies.json')
+    parser.add_argument('-c', '--config', default='~/.arbies.toml')
 
     command_parser = parser.add_subparsers(dest='command')
     command_parser.required = True
