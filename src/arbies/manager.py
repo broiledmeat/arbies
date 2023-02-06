@@ -7,6 +7,7 @@ import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from PIL import Image, ImageDraw
+from arbies.drawing.geometry import Vector2
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ class Manager:
         self.trays: list[Tray] = []
         self.workers: list[Worker] = []
 
-        self._size: tuple[int, int] = (640, 384)
+        self._size: Vector2 = Vector2(640, 384)
         self._image: Optional[Image.Image] = None
         self._background_fill: ColorType = 0
 
@@ -43,8 +44,8 @@ class Manager:
         handler.setFormatter(self._log_formatter)
 
     @property
-    def size(self) -> tuple[int, int]:
-        return tuple(self._size)
+    def size(self) -> Vector2:
+        return self._size
 
     @property
     def image(self) -> Image.Image:
@@ -153,7 +154,7 @@ class Manager:
         log_path: Optional[str] = global_config.get('LogPath', None)
         if log_path is not None:
             handler = RotatingFileHandler(manager.resolve_path(log_path), maxBytes=2048)
-            handler.setLevel(logging.INFO)
+            handler.setLevel(logging.DEBUG)
             handler.setFormatter(manager._log_formatter)
             manager.log.addHandler(handler)
 

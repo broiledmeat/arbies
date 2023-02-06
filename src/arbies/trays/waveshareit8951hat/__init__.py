@@ -24,11 +24,11 @@ class WaveShareIT8951HATTray(Tray):
         self._device = AutoEPDDisplay(vcom=self.vcom)
         self._device.clear()
 
-    async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
         from IT8951.constants import DisplayModes
 
         self._device.frame_buf.paste(image)
-        self._device.draw_full(DisplayModes.GC16)
+        self._device.draw_partial(DisplayModes.GC16)
 
         self._manager.log.info(f'IT8951. Pushed full, 16 level grey, VCOM {self.vcom}.')
 

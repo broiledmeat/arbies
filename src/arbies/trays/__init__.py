@@ -3,11 +3,10 @@ from abc import ABC
 from _collections import defaultdict
 from PIL import Image
 from arbies import import_module_class_from_fullname
+from arbies.drawing.geometry import Vector2, Box
 from arbies.manager import Manager, ConfigDict
-from typing import TYPE_CHECKING, Type, Optional, Dict, List
+from typing import Type, Optional, Dict, List
 
-if TYPE_CHECKING:
-    from arbies.drawing.geometry import Box
 
 _registered: Dict[str, str] = {
     'file': 'arbies.trays.file.FileTray',
@@ -34,6 +33,11 @@ class Tray(ABC):
 
         self._manager: Manager = manager
         self._label: str = f'{name}[{len(Tray._instances[name]) - 1}]'
+        self._size: Vector2 = Vector2()
+
+    @property
+    def size(self) -> Vector2:
+        return self._size
 
     async def startup(self):
         pass
@@ -42,8 +46,23 @@ class Tray(ABC):
         pass
 
     async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+        if self._size != image.size:
+            if updated_boxes is not None:
+                scale = (self._size[0] / image.size[0], self._size[1] / image.size[1])
+                updated_boxes = [Box(box.x * scale[0], box.y * scale[1],
+                                     box.w * scale[0], box.z * scale[1])
+                                 for box in updated_boxes]
+            image = image.resize(self._size)
+        await self._serve_internal(image, updated_boxes)
+
+    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None) -> Image.Image:
         raise NotImplemented
 
     @classmethod
     def from_config(cls, manager: Manager, config: ConfigDict) -> Tray:
-        return cls(manager)
+        # noinspection PyTypeChecker
+        tray: Tray = cls(manager)
+
+        tray._size = Vector2(config.get('Size', manager.size))
+
+        return tray

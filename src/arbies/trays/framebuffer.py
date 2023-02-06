@@ -13,19 +13,13 @@ class FramebufferTray(Tray):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self.path: str = self._default_path
-        self.size: Vector2 = Vector2()
-        self.format: str = self._default_format
+        self._path: str = self._default_path
+        self._format: str = self._default_format
 
-    async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
-        self._manager.log.info(f'Writing to {self.path} {self.size}')
-
-        fb_image = image
-        if self.size != image.size:
-            fb_image = image.resize(self.size)
-
-        fb_data = fb_image.tobytes('raw', self.format)
-        with open(self.path, 'wb') as fb:
+    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+        self._manager.log.info(f'Writing to {self._path} {self.size}')
+        fb_data = image.tobytes('raw', self._format)
+        with open(self._path, 'wb') as fb:
             fb.write(fb_data)
 
     @classmethod
@@ -33,8 +27,7 @@ class FramebufferTray(Tray):
         # noinspection PyTypeChecker
         tray: FramebufferTray = super().from_config(manager, config)
 
-        tray.path = config.get('Path', tray.path)
-        tray.size = Vector2(config.get('Size', manager.size))
-        tray.format = config.get('Format', tray.format)
+        tray._path = config.get('Path', tray._path)
+        tray._format = config.get('Format', tray._format)
 
         return tray

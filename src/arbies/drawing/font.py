@@ -2,11 +2,11 @@ from __future__ import annotations
 import os
 from PIL import ImageDraw, ImageFont
 from typing import TYPE_CHECKING, Union, Optional, Tuple, List, Dict
-from ..manager import ConfigDict
 from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
 
 if TYPE_CHECKING:
     from . import Vector2Type, ColorType
+    from ..manager import ConfigDict
 
 
 class Font(ImageFont.FreeTypeFont):

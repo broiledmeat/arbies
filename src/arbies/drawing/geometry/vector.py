@@ -20,6 +20,9 @@ class Vector2(tuple):
     def y(self) -> int:
         return self[1]
 
+    def __setitem__(self, key, value):
+        raise NotImplemented()
+
 
 class Vector4(tuple):
     def __init__(self,
@@ -54,3 +57,6 @@ class Vector4(tuple):
     @property
     def z(self) -> int:
         return self[3]
+
+    def __setitem__(self, key, value):
+        raise NotImplemented

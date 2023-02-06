@@ -23,7 +23,7 @@ class WaveShareEPDTray(Tray):
     def clear(self):
         self._device.try_locked(self._device.clear)
 
-    async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
         self._image = image
         self._device.try_locked(lambda: self._device.display(self._image))
 
@@ -33,8 +33,8 @@ class WaveShareEPDTray(Tray):
         tray: WaveShareEPDTray = super().from_config(manager, config)
 
         tray._device_config = DeviceConfig(
-            width=config.get('Width', manager.size[0]),
-            height=config.get('Height', manager.size[1]),
+            width=tray.size.x,
+            height=tray.size.y,
             rst_pin=config.get('RstPin', DeviceConfig.rst_pin),
             dc_pin=config.get('DcPin', DeviceConfig.dc_pin),
             cs_pin=config.get('CsPin', DeviceConfig.cs_pin),
