@@ -8,11 +8,12 @@ from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from PIL import Image, ImageDraw
 from arbies.drawing.geometry import Vector2
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Type, Optional, Union
 
 if TYPE_CHECKING:
     from arbies.drawing.geometry import Box
     from arbies.drawing import ColorType
+    from arbies.suppliers import Supplier
     from arbies.trays import Tray
     from arbies.workers import Worker
 
@@ -23,8 +24,11 @@ class Manager:
     def __init__(self):
         self.config: ConfigDict = {}
         self.log: logging.Logger = logging.getLogger('arbies')
+        self.suppliers: set[Supplier] = set()
         self.trays: list[Tray] = []
         self.workers: list[Worker] = []
+
+        self._supplier_lock: asyncio.Lock = asyncio.Lock()
 
         self._size: Vector2 = Vector2(640, 384)
         self._image: Optional[Image.Image] = None
@@ -112,6 +116,7 @@ class Manager:
     async def _shutdown(self):
         await asyncio.gather(*(worker.shutdown() for worker in self.workers))
         await asyncio.gather(*(tray.shutdown() for tray in self.trays))
+        await asyncio.gather(*(supplier.shutdown() for supplier in self.suppliers))
 
     @staticmethod
     def _clear(target: Image.Image):
@@ -139,6 +144,21 @@ class Manager:
             self._updated_workers.add(worker)
         finally:
             self._worker_update_lock.release()
+
+    async def get_supplier(self, type_: Type) -> Supplier:
+        await self._supplier_lock.acquire()
+
+        try:
+            for supplier in self.suppliers:
+                if type(supplier) == type_:
+                    return supplier
+
+            supplier: Supplier = type_(self)
+            self.suppliers.add(supplier)
+            await supplier.startup()
+            return supplier
+        finally:
+            self._supplier_lock.release()
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Manager:
