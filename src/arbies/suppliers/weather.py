@@ -1,16 +1,13 @@
+import asyncio
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 import json
 from string import Template
-import requests
-from arbies.manager import ConfigDict
-from typing import Dict, Tuple
-
-
-@dataclass(frozen=True)
-class GpsCoords:
-    latitude: float
-    longitude: float
+import aiohttp
+from arbies.manager import Manager
+from arbies.suppliers import Supplier
+from arbies.suppliers.location import Coords
 
 
 @dataclass(frozen=True)
@@ -33,98 +30,112 @@ class WeatherPeriod:
     wind_speed: float  # mph
 
 
-_gps_grid_lookup_uri: Template = Template('https://api.weather.gov/points/$latitude,$longitude')
-_weather_weekly_uri: Template = Template('https://api.weather.gov/gridpoints/$office/$gridx,$gridy/forecast')
-_weather_hourly_uri: Template = Template('https://api.weather.gov/gridpoints/$office/$gridx,$gridy/forecast/hourly')
+class WeatherSupplier(Supplier):
+    _cache_expire_time: int = 30 * 60
+    _gps_grid_lookup_uri: Template = Template('https://api.weather.gov/points/$latitude,$longitude')
+    _weather_weekly_uri: Template = Template('https://api.weather.gov/gridpoints/$office/$gridx,$gridy/forecast')
+    _weather_hourly_uri: Template = Template('https://api.weather.gov/gridpoints/$office/$gridx,$gridy/forecast/hourly')
 
-_locations: Dict[str, GpsCoords] = {}
-_coordinates_grid_lookup: Dict[GpsCoords, GridCoords] = {}
-_periods_cache: Dict[GridCoords, Tuple[datetime, WeatherPeriod]] = {}
-_cache_expire_time: int = 30 * 60
+    def __init__(self, manager: Manager):
+        super().__init__(manager)
 
+        self._cache_lock: asyncio.Lock = asyncio.Lock()
+        self._cache_locks: dict[Coords, asyncio.Lock] = {}
+        self._coords_grid_lookup: dict[Coords, GridCoords] = {}
+        self._periods_cache: dict[GridCoords, tuple[datetime, WeatherPeriod]] = {}
 
-def init_from_config(config: ConfigDict):
-    for name, location_config in config.get('Locations', {}).items():
-        if name not in location_config:
-            _locations[name] = location_config['Coords']
+    async def get_current(self, coords: Coords) -> WeatherPeriod:
+        from arbies.suppliers.datetime_ import now_tz
 
+        async with self._acquire_cache_lock(coords):
+            if coords not in self._coords_grid_lookup:
+                self._coords_grid_lookup[coords] = await self._get_gps_grid(coords)
+            grid = self._coords_grid_lookup[coords]
+            now = now_tz()
 
-def get_location_coords(name: str) -> GpsCoords:
-    return _locations[name]
+            if coords in self._periods_cache and \
+                    (now - self._periods_cache[grid][0]).total_seconds() < self._cache_expire_time:
+                return self._periods_cache[grid][1]
 
+            weekly_period_task = self._get_current_raw_period(self._weather_weekly_uri, grid)
+            hourly_period_task = self._get_current_raw_period(self._weather_hourly_uri, grid)
 
-def get_current_period(coords: GpsCoords) -> WeatherPeriod:
-    from arbies.suppliers.datetime_ import now_tz
+            weekly_period: WeatherPeriod = await weekly_period_task
+            hourly_period: WeatherPeriod = await hourly_period_task
 
-    if coords not in _coordinates_grid_lookup:
-        _coordinates_grid_lookup[coords] = _get_gps_grid(coords)
+            period: WeatherPeriod = WeatherPeriod(
+                name='Now',
+                start_time=hourly_period.start_time,
+                end_time=hourly_period.end_time,
+                is_daytime=hourly_period.is_daytime,
+                short_forecast=hourly_period.short_forecast,
+                long_forecast=weekly_period.long_forecast,
+                temperature=hourly_period.temperature,
+                wind_direction=hourly_period.wind_direction,
+                wind_speed=hourly_period.wind_speed
+            )
 
-    grid = _coordinates_grid_lookup[coords]
-    now = now_tz()
+            self._periods_cache[grid] = (now, period)
 
-    if coords in _periods_cache and (now - _periods_cache[grid][0]).total_seconds() < _cache_expire_time:
-        return _periods_cache[grid][1]
+        return period
 
-    weekly_period: WeatherPeriod = _get_current_raw_period(_weather_weekly_uri, grid)
-    hourly_period: WeatherPeriod = _get_current_raw_period(_weather_hourly_uri, grid)
+    @asynccontextmanager
+    async def _acquire_cache_lock(self, coords: Coords):
+        await self._cache_lock.acquire()
 
-    period: WeatherPeriod = WeatherPeriod(
-        name='Now',
-        start_time=hourly_period.start_time,
-        end_time=hourly_period.end_time,
-        is_daytime=hourly_period.is_daytime,
-        short_forecast=hourly_period.short_forecast,
-        long_forecast=weekly_period.long_forecast,
-        temperature=hourly_period.temperature,
-        wind_direction=hourly_period.wind_direction,
-        wind_speed=hourly_period.wind_speed
-    )
+        if coords not in self._cache_locks:
+            self._cache_locks[coords] = asyncio.Lock()
+        lock = self._cache_locks[coords]
 
-    _periods_cache[grid] = (now, period)
+        self._cache_lock.release()
 
-    return period
+        try:
+            await lock.acquire()
+            yield lock
+        finally:
+            lock.release()
 
+    @staticmethod
+    async def _get_gps_grid(coords: Coords) -> GridCoords:
+        uri = WeatherSupplier._gps_grid_lookup_uri.substitute(latitude=coords.latitude, longitude=coords.longitude)
+        async with aiohttp.ClientSession() as session, session.get(uri) as response:
+            if response.status != 200:
+                raise IOError(f'Weather service returned {response.status}: {response.content}')
 
-def _get_gps_grid(coords: GpsCoords) -> GridCoords:
-    response = requests.get(_gps_grid_lookup_uri.substitute(latitude=coords.latitude, longitude=coords.longitude))
+            try:
+                data = json.loads(await response.text())
+            except json.JSONDecodeError:
+                raise ValueError(f'Weather service returned unparseable response: {response.content}')
 
-    if response.status_code != 200:
-        raise IOError(f'Weather service returned {response.status_code}: {response.content}')
+            return GridCoords(data['properties']['cwa'],
+                              data['properties']['gridX'],
+                              data['properties']['gridY'])
 
-    try:
-        data = json.loads(response.content)
-    except json.JSONDecodeError:
-        raise ValueError(f'Weather service returned unparseable response: {response.content}')
+    @staticmethod
+    async def _get_current_raw_period(uri_template: Template, grid: GridCoords) -> WeatherPeriod:
+        uri = uri_template.substitute(office=grid.office, gridx=grid.x, gridy=grid.y)
+        async with aiohttp.ClientSession() as session, session.get(uri) as response:
+            if response.status != 200:
+                raise IOError(f'Weather service returned {response.status}: {response.content}')
 
-    return GridCoords(data['properties']['cwa'],
-                      data['properties']['gridX'],
-                      data['properties']['gridY'])
+            try:
+                data = json.loads(await response.text())
+            except json.JSONDecodeError:
+                raise ValueError(f'Weather service returned unparseable response: {response.content}')
 
+            period = data['properties']['periods'][0]
 
-def _get_current_raw_period(uri_template: Template, grid: GridCoords) -> WeatherPeriod:
-    response = requests.get(uri_template.substitute(office=grid.office, gridx=grid.x, gridy=grid.y))
+            wind_tokens = str(period['windSpeed']).split()
+            wind_speed = int(wind_tokens[0])
 
-    if response.status_code != 200:
-        raise IOError(f'Weather service returned {response.status_code}: {response.content}')
-
-    try:
-        data = json.loads(response.content)
-    except json.JSONDecodeError:
-        raise ValueError(f'Weather service returned unparseable response: {response.content}')
-
-    period = data['properties']['periods'][0]
-
-    wind_tokens = str(period['windSpeed']).split()
-    wind_speed = int(wind_tokens[0])
-
-    return WeatherPeriod(
-        name=period['name'],
-        start_time=datetime.fromisoformat(period['startTime']),
-        end_time=datetime.fromisoformat(period['endTime']),
-        is_daytime=period['isDaytime'],
-        short_forecast=period['shortForecast'],
-        long_forecast=period['detailedForecast'],
-        temperature=period['temperature'],
-        wind_direction=period['windDirection'],
-        wind_speed=wind_speed
-    )
+            return WeatherPeriod(
+                name=period['name'],
+                start_time=datetime.fromisoformat(period['startTime']),
+                end_time=datetime.fromisoformat(period['endTime']),
+                is_daytime=period['isDaytime'],
+                short_forecast=period['shortForecast'],
+                long_forecast=period['detailedForecast'],
+                temperature=period['temperature'],
+                wind_direction=period['windDirection'],
+                wind_speed=wind_speed
+            )
