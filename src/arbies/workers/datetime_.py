@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 from typing import Optional
 from arbies.manager import Manager, ConfigDict
 from arbies.workers import LoopIntervalWorker
-from arbies.suppliers import datetime as adt
+from arbies.suppliers import datetime_ as adt
 from arbies import drawing
 from arbies.drawing import HorizontalAlignment, VerticalAlignment
 

@@ -54,7 +54,7 @@ def get_location_coords(name: str) -> GpsCoords:
 
 
 def get_current_period(coords: GpsCoords) -> WeatherPeriod:
-    from arbies.suppliers.datetime import now_tz
+    from arbies.suppliers.datetime_ import now_tz
 
     if coords not in _coordinates_grid_lookup:
         _coordinates_grid_lookup[coords] = _get_gps_grid(coords)
