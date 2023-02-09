@@ -80,9 +80,9 @@ class Manager:
             while True:
                 # Wait until every HH:MM:??, where ?? is the seconds cleanly divisible by _render_loop_interval.
                 await asyncio.sleep(self._render_loop_interval - (datetime.now().second % self._render_loop_interval))
+                await self._worker_update_lock.acquire()
 
                 try:
-                    await self._worker_update_lock.acquire()
                     updated_workers: list[Worker] = list(self._updated_workers)
                     updated_boxes: list[Box] = [worker.box for worker in self._updated_workers]
 
@@ -99,7 +99,6 @@ class Manager:
                     if worker_image is not None:
                         self._composite_image(worker_image, self.image, worker.box)
 
-                # TODO: full or partial serve
                 await asyncio.gather(*(tray.serve(manager_image, updated_boxes) for tray in self.trays))
         except asyncio.CancelledError:
             pass
@@ -137,10 +136,11 @@ class Manager:
 
     async def update_worker_image(self, worker: Worker, image: Image.Image):
         self.log.debug(f'Updating {worker.label}')
-        self._worker_images[worker] = image
+
+        await self._worker_update_lock.acquire()
 
         try:
-            await self._worker_update_lock.acquire()
+            self._worker_images[worker] = image
             self._updated_workers.add(worker)
         finally:
             self._worker_update_lock.release()
