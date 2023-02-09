@@ -45,8 +45,16 @@ class Worker(ABC):
         self._font_fill: ColorType = (0, 0, 0, 255)
 
     @property
+    def manager(self):
+        return self._manager
+
+    @property
     def size(self) -> Vector2:
         return self._size
+
+    @property
+    def position(self) -> Vector2:
+        return self._position
 
     @property
     def box(self) -> Box:
@@ -54,6 +62,14 @@ class Worker(ABC):
                    self._position[1],
                    self._position[0] + self._size[0],
                    self._position[1] + self._size[1])
+
+    @property
+    def font(self) -> Font:
+        return self._font
+
+    @property
+    def font_fill(self) -> ColorType:
+        return self._font_fill
 
     async def startup(self):
         pass
