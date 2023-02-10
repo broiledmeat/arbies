@@ -7,14 +7,17 @@ from .device import Device, DeviceConfig
 
 
 class WaveShareEPDTray(Tray):
-    _loop_interval = 60 * 60 * 24
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
-
-        self._image: Optional[Image.Image] = None
-        self._device_config: DeviceConfig = DeviceConfig(*manager.size)
-        self._device: Optional[Device] = None
+        self._device: Device | None = None
+        self._device_config: DeviceConfig = DeviceConfig(
+            width=self.size.x,
+            height=self.size.y,
+            rst_pin=int(kwargs.get('RstPin', DeviceConfig.rst_pin)),
+            dc_pin=int(kwargs.get('DcPin', DeviceConfig.dc_pin)),
+            cs_pin=int(kwargs.get('CsPin', DeviceConfig.cs_pin)),
+            busy_pin=int(kwargs.get('BusyPin', DeviceConfig.busy_pin)))
 
     async def startup(self):
         self._device = Device(self._device_config)
@@ -26,19 +29,3 @@ class WaveShareEPDTray(Tray):
     async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
         self._image = image
         self._device.try_locked(lambda: self._device.display(self._image))
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> WaveShareEPDTray:
-        # noinspection PyTypeChecker
-        tray: WaveShareEPDTray = super().from_config(manager, config)
-
-        tray._device_config = DeviceConfig(
-            width=tray.size.x,
-            height=tray.size.y,
-            rst_pin=config.get('RstPin', DeviceConfig.rst_pin),
-            dc_pin=config.get('DcPin', DeviceConfig.dc_pin),
-            cs_pin=config.get('CsPin', DeviceConfig.cs_pin),
-            busy_pin=config.get('BusyPin', DeviceConfig.busy_pin),
-        )
-
-        return tray

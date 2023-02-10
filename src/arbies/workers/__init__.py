@@ -30,7 +30,7 @@ def get(name: str) -> Optional[Type]:
 class Worker(ABC):
     _instances: dict[str, list[Worker]] = defaultdict(list)
 
-    def __init__(self, manager: Manager):
+    def __init__(self, manager: Manager, **kwargs):
         name = self.__class__.__name__
         if name.endswith(Worker.__name__):
             name = name[:-len(Worker.__name__)]
@@ -39,10 +39,11 @@ class Worker(ABC):
         self.label = f'{name}[{len(Worker._instances[name]) - 1}]'
 
         self._manager: Manager = manager
-        self._position: Vector2 = Vector2()
-        self._size: Vector2 = Vector2(100, 100)
-        self._font: Font = get_font()
-        self._font_fill: ColorType = (0, 0, 0, 255)
+        self._position: Vector2 = Vector2(kwargs.get('Position', (0, 0)))
+        self._size: Vector2 = Vector2(kwargs.get('Size', (100, 100)))
+        self._font_fill: ColorType = as_color(kwargs.get('FontFill', (0, 0, 0, 255)))
+        font_size: int | None = int(kwargs.get('FontSize')) if 'FontSize' in kwargs else None
+        self._font: Font = get_font(kwargs.get('Font', None), size=font_size)
 
     @property
     def manager(self):
@@ -107,24 +108,13 @@ class Worker(ABC):
 
         return image
 
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> Worker:
-        worker = cls(manager)
-
-        worker._size = Vector2(config.get('Size', worker._size))
-        worker._position = Vector2(config.get('Position', worker._position))
-        worker._font = get_font(config.get('Font', None), size=config.get('FontSize', None))
-        worker._font_fill = as_color(config.get('FontFill', worker._font_fill))
-
-        return worker
-
 
 class LoopIntervalWorker(Worker):
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-        self._on_start: bool = True
-        self._cron_interval: str = '*/1 * * * *'
+        self._on_start: bool = bool(kwargs.get('OnStart', True))
+        self._cron_interval: str = kwargs.get('Interval', '*/1 * * * *')
 
     async def render_loop(self):
         from datetime import datetime
@@ -144,13 +134,3 @@ class LoopIntervalWorker(Worker):
             self._manager.log.debug(f'Awaiting {self.label} until {time_next} ({delay} seconds)')
             await asyncio.sleep(delay)
             await self.render_once()
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> LoopIntervalWorker:
-        # noinspection PyTypeChecker
-        worker: LoopIntervalWorker = super().from_config(manager, config)
-
-        worker._on_start = bool(config.get('OnStart', worker._on_start))
-        worker._cron_interval = config.get('Interval', worker._cron_interval)
-
-        return worker

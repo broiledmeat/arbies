@@ -8,10 +8,11 @@ from arbies.workers import Worker
 
 
 class ImageWorker(Worker):
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-        self._path: Optional[str] = None
+        path: str = kwargs.get('Path', '')
+        self._path: str = manager.resolve_path(path)
 
     async def _render_internal(self) -> Image.Image:
         image = Image.new('RGBA', self._size)
@@ -21,12 +22,3 @@ class ImageWorker(Worker):
                            horizontal_alignment=HorizontalAlignment.CENTER,
                            vertical_alignment=VerticalAlignment.CENTER)
         return image
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> ImageWorker:
-        # noinspection PyTypeChecker
-        worker: ImageWorker = super().from_config(manager, config)
-
-        worker._path = manager.resolve_path(config.get('Path', worker._path))
-
-        return worker

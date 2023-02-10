@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 
 class TkTray(Tray):
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
         self._window: Optional[tkinter.Tk] = None
         self._canvas: Optional[tkinter.Canvas] = None

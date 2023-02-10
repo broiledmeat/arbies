@@ -24,7 +24,7 @@ def get(name: str) -> Optional[Type]:
 class Tray(ABC):
     _instances: Dict[str, List[Tray]] = defaultdict(list)
 
-    def __init__(self, manager: Manager):
+    def __init__(self, manager: Manager, **kwargs):
         name = self.__class__.__name__
         if name.endswith(Tray.__name__):
             name = name[:-len(Tray.__name__)]
@@ -33,7 +33,7 @@ class Tray(ABC):
 
         self._manager: Manager = manager
         self._label: str = f'{name}[{len(Tray._instances[name]) - 1}]'
-        self._size: Vector2 = Vector2()
+        self._size: Vector2 = Vector2(kwargs.get('Size', manager.size))
 
     @property
     def size(self) -> Vector2:
@@ -57,12 +57,3 @@ class Tray(ABC):
 
     async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None) -> Image.Image:
         raise NotImplemented
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> Tray:
-        # noinspection PyTypeChecker
-        tray: Tray = cls(manager)
-
-        tray._size = Vector2(config.get('Size', manager.size))
-
-        return tray

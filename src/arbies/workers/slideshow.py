@@ -9,18 +9,16 @@ from arbies.workers import LoopIntervalWorker
 
 
 class SlideShowWorker(LoopIntervalWorker):
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-        self._root: Optional[str] = None
-        self._path_iterator: Optional[DirectoryIterator] = None
+        path: str = kwargs.get('Root', '')
+        self._root: str = manager.resolve_path(path)
+        self._path_iterator: DirectoryIterator = get_dir_iterator(self._root,
+                                                                  method=DirectoryIterationMethod.Random,
+                                                                  filter_=r'.*\.(jpg|jpeg|png)$')
 
     async def _render_internal(self):
-        if self._path_iterator is None:
-            self._path_iterator = get_dir_iterator(self._root,
-                                                   method=DirectoryIterationMethod.Random,
-                                                   filter_=r'.*\.(jpg|jpeg|png)$')
-
         path: str = next(self._path_iterator)
         image = Image.new('RGBA', self._size)
         drawing.draw_image(image,
@@ -29,12 +27,3 @@ class SlideShowWorker(LoopIntervalWorker):
                            horizontal_alignment=HorizontalAlignment.CENTER,
                            vertical_alignment=VerticalAlignment.CENTER)
         return image
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> SlideShowWorker:
-        # noinspection PyTypeChecker
-        worker: SlideShowWorker = super().from_config(manager, config)
-
-        worker._root = manager.resolve_path(config.get('Root', worker._root))
-
-        return worker

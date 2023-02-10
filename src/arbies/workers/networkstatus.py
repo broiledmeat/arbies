@@ -8,10 +8,10 @@ from arbies.workers import Worker
 
 
 class NetworkStatusWorker(Worker):
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-        self._interface: Optional[str] = None
+        self._interface: str = kwargs.get('Interface', '')
 
     async def _render_internal(self) -> Image.Image:
         image = Image.new('RGBA', self._size)
@@ -25,12 +25,3 @@ class NetworkStatusWorker(Worker):
         image.paste(drawing.get_icon(icon_name, tuple(self._size)))
 
         return image
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> NetworkStatusWorker:
-        # noinspection PyTypeChecker
-        worker: NetworkStatusWorker = super().from_config(manager, config)
-
-        worker._interface = config.get('Interface', worker._interface)
-
-        return worker

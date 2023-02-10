@@ -9,12 +9,14 @@ from arbies.drawing import HorizontalAlignment, VerticalAlignment
 
 
 class DateTimeWorker(LoopIntervalWorker):
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-        self._format: Optional[str] = None
-        self._horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT
-        self._vertical_alignment: VerticalAlignment = VerticalAlignment.TOP
+        self._format: str | None = kwargs.get('Format', None)
+        self._horizontal_alignment: HorizontalAlignment = HorizontalAlignment.convert_from(
+            kwargs.get('HAlign', HorizontalAlignment.LEFT))
+        self._vertical_alignment: VerticalAlignment = VerticalAlignment.convert_from(
+            kwargs.get('VAlign', VerticalAlignment.TOP))
 
     async def _render_internal(self) -> Image.Image:
         now = adt.now_tz()
@@ -32,16 +34,3 @@ class DateTimeWorker(LoopIntervalWorker):
         del draw
 
         return image
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> DateTimeWorker:
-        # noinspection PyTypeChecker
-        worker: DateTimeWorker = super().from_config(manager, config)
-
-        worker._format = config.get('Format', worker._format)
-        worker._horizontal_alignment = HorizontalAlignment.convert_from(
-            config.get('HAlign', worker._horizontal_alignment))
-        worker._vertical_alignment = VerticalAlignment.convert_from(
-            config.get('VAlign', worker._vertical_alignment))
-
-        return worker

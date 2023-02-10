@@ -186,7 +186,7 @@ class Manager:
             item_configs: list[ConfigDict] = config.get(section_name, {}).values()
             for item_config in item_configs:
                 class_ = module.get(item_config['Type'])
-                instance = class_.from_config(manager, item_config)
+                instance = class_(manager, **item_config)
                 manager_list.append(instance)
 
         return manager

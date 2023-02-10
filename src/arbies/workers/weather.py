@@ -63,12 +63,18 @@ class WeatherWorker(LoopIntervalWorker):
         'W': 'left'
     }
 
-    def __init__(self, manager: Manager):
-        super().__init__(manager)
+    def __init__(self, manager: Manager, **kwargs):
+        super().__init__(manager, **kwargs)
 
-        self._location_name: str | None = None
+        self._location_name: str | None = kwargs.get('Location', None)
         self._location: Location | None = None
-        self._render_func = _render_temperature
+
+        style_name = kwargs.get('Style', WeatherWorker._default_style)
+        style_func, style_interval = WeatherWorker._styles[style_name]
+
+        self._render_func: Callable = style_func
+        if 'Interval' not in kwargs:
+            self._cron_interval = style_interval
 
     async def _render_internal(self) -> Image.Image:
         if self._location is None:
@@ -85,23 +91,3 @@ class WeatherWorker(LoopIntervalWorker):
 
         del draw
         return image
-
-    @classmethod
-    def from_config(cls, manager: Manager, config: ConfigDict) -> WeatherWorker:
-        # noinspection PyTypeChecker
-        worker: WeatherWorker = super().from_config(manager, config)
-
-        worker._location_name = config.get('Location', worker._location_name)
-
-        style_name = config.get('Style', WeatherWorker._default_style)
-        if style_name not in WeatherWorker._styles:
-            raise ValueError(style_name)
-
-        worker._render_func, style_interval = WeatherWorker._styles[style_name]
-
-        if 'Interval' not in config:
-            worker._cron_interval = style_interval
-
-        print(f'{worker.label}: {worker._cron_interval}')
-
-        return worker
