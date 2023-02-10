@@ -46,7 +46,7 @@ async def main() -> int:
 
 def _get_manager(config_path) -> Optional[Manager]:
     with open(config_path, 'r') as config_file:
-        return Manager.from_config(toml.load(config_file))
+        return Manager(**toml.load(config_file))
 
 
 sys.exit(asyncio.run(main()))

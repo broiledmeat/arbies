@@ -20,24 +20,22 @@ ConfigDict = dict[str, str | int | float | list, 'ConfigDict']
 
 
 class Manager:
-    def __init__(self):
-        self.config: ConfigDict = {}
-        self.log: logging.Logger = logging.getLogger('arbies')
-        self.suppliers: set[Supplier] = set()
-        self.trays: list[Tray] = []
-        self.workers: list[Worker] = []
+    def __init__(self, **kwargs):
+        from arbies import trays, workers
+        from arbies.drawing import as_color
+        from arbies.drawing.font import Font
+        from arbies.drawing.geometry import Vector2
 
-        self._supplier_lock: asyncio.Lock = asyncio.Lock()
+        global_config: ConfigDict = kwargs.get('Global', {})
 
-        self._size: Vector2 = Vector2(640, 384)
-        self._image: Optional[Image.Image] = None
-        self._background_fill: ColorType = 0
-
-        self._worker_update_lock: asyncio.Lock = asyncio.Lock()
-        self._worker_images: dict[Worker, Optional[Image.Image]] = {}
-        self._updated_workers: set[Worker] = set()
+        # Rendering
+        self._size: Vector2 = Vector2(global_config.get('Size', (640, 384)))
+        self._background_fill: ColorType = as_color(global_config.get('BackgroundFill', (255, 255, 255)))
         self._render_loop_interval: float = 15.0
+        self._image: Image.Image | None = None
 
+        # Logging
+        self.log: logging.Logger = logging.getLogger('arbies')
         self.log.setLevel(logging.DEBUG)
         handler = StreamHandler(sys.stdout)
         handler.setLevel(logging.DEBUG)
@@ -45,6 +43,40 @@ class Manager:
 
         self._log_formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
         handler.setFormatter(self._log_formatter)
+
+        log_path: str | None = global_config.get('LogPath', None)
+        if log_path is not None:
+            handler = RotatingFileHandler(self.resolve_path(log_path), maxBytes=2048)
+            handler.setLevel(logging.DEBUG)
+            handler.setFormatter(self._log_formatter)
+            self.log.addHandler(handler)
+
+        # Fonts
+        for item_name, item_config in kwargs.get('Fonts', {}).items():
+            Font.load_from_config(item_name, item_config)
+
+        # Suppliers
+        self.suppliers: set[Supplier] = set()
+        self._supplier_lock: asyncio.Lock = asyncio.Lock()
+
+        # Worker updating
+        self._worker_update_lock: asyncio.Lock = asyncio.Lock()
+        self._worker_images: dict[Worker, Image.Image | None] = {}
+        self._updated_workers: set[Worker] = set()
+
+        # Trays and Workers
+        self.config: ConfigDict = kwargs
+        self.trays: list[Tray] = []
+        self.workers: list[Worker] = []
+
+        for section_name, module, manager_list in (('Trays', trays, self.trays),
+                                                   ('Workers', workers, self.workers)):
+            # noinspection PyTypeChecker
+            item_configs: list[ConfigDict] = kwargs.get(section_name, {}).values()
+            for item_config in item_configs:
+                class_ = module.get(item_config['Type'])
+                instance = class_(self, **item_config)
+                manager_list.append(instance)
 
     @property
     def size(self) -> Vector2:
@@ -158,37 +190,6 @@ class Manager:
             return supplier
         finally:
             self._supplier_lock.release()
-
-    @classmethod
-    def from_config(cls, config: ConfigDict) -> Manager:
-        from arbies import trays, workers, drawing
-
-        manager = cls()
-        manager.config = config
-
-        global_config: ConfigDict = config.get('Global', {})
-        manager._size = tuple(global_config.get('Size', manager._size))
-        manager._background_fill = global_config.get('BackgroundFill', manager._background_fill)
-
-        log_path: Optional[str] = global_config.get('LogPath', None)
-        if log_path is not None:
-            handler = RotatingFileHandler(manager.resolve_path(log_path), maxBytes=2048)
-            handler.setLevel(logging.DEBUG)
-            handler.setFormatter(manager._log_formatter)
-            manager.log.addHandler(handler)
-
-        for item_name, item_config in config.get('Fonts', {}).items():
-            drawing.Font.load_from_config(item_name, item_config)
-
-        for section_name, module, manager_list in (('Trays', trays, manager.trays),
-                                                   ('Workers', workers, manager.workers)):
-            item_configs: list[ConfigDict] = config.get(section_name, {}).values()
-            for item_config in item_configs:
-                class_ = module.get(item_config['Type'])
-                instance = class_(manager, **item_config)
-                manager_list.append(instance)
-
-        return manager
 
     # noinspection PyMethodMayBeStatic
     def resolve_path(self, path: str) -> str:
