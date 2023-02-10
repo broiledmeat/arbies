@@ -64,9 +64,9 @@ def draw_image(dest: Image.Image,
 
 
 def as_color(value: ColorType) -> ColorType:
-    if isinstance(value, tuple):
+    if isinstance(value, tuple) and 3 <= len(value) <= 4:
         return value
-    elif isinstance(value, list):
+    elif isinstance(value, list) and 3 <= len(value) <= 4:
         return tuple(value)
     elif isinstance(value, str):
         return ImageColor.getrgb(value)
