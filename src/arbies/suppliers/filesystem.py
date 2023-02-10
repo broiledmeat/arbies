@@ -8,22 +8,22 @@ import time
 import natsort
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-from typing import Optional, Callable, Tuple, List, Set, Dict
+from typing import Callable
 
 __all__ = ('DirectoryIterator', 'DirectoryIterationMethod', 'OnChangedCallback', 'add_on_changed', 'get_dir_iterator')
 
 OnChangedCallback = Callable[[str], None]
-_DirectoryIteratorKey = Tuple[str, 'DirectoryIterationMethod', bool, Optional[str]]
+_DirectoryIteratorKey = tuple[str, 'DirectoryIterationMethod', bool, str | None]
 
-_on_changed_callbacks: Dict[str, 'OnModifyObserver'] = {}
-_directory_iterators: Dict[_DirectoryIteratorKey, 'DirectoryIterator'] = {}
+_on_changed_callbacks: dict[str, 'OnModifyObserver'] = {}
+_directory_iterators: dict[_DirectoryIteratorKey, 'DirectoryIterator'] = {}
 
 
 class OnModifyObserver:
     def __init__(self, path: str, recursive: bool = False):
-        self.callbacks: Set[OnChangedCallback] = set()
+        self.callbacks: set[OnChangedCallback] = set()
 
-        self._filename: Optional[str] = None
+        self._filename: str | None = None
         if os.path.isfile(path):
             self._filename = path
             path = os.path.dirname(path)
@@ -51,7 +51,7 @@ class OnModifyObserver:
         def __init__(self, callback: Callable[[str], None], delay: float = 2.0):
             self.callback = callback
             self.delay = delay
-            self._timer: Optional[threading.Timer] = None
+            self._timer: threading.Timer | None = None
 
         def trigger(self, path: str):
             if self._timer is not None and self._timer.is_alive():
@@ -82,14 +82,14 @@ class DirectoryIterator:
                  path: str,
                  method: DirectoryIterationMethod = DirectoryIterationMethod.Sorted,
                  recursive: bool = False,
-                 filter_: Optional[str] = None):
+                 filter_: str | None = None):
         self.path: str = path
         self.method: DirectoryIterationMethod = method
         self.recursive: bool = recursive
-        self.filter: Optional[re.Match] = re.compile(filter_, re.IGNORECASE) if filter_ is not None else None
+        self.filter: re.Match | None = re.compile(filter_, re.IGNORECASE) if filter_ is not None else None
 
         self._index = 0
-        self._paths: List[str] = []
+        self._paths: list[str] = []
 
         self._refresh_paths()
 
@@ -159,7 +159,7 @@ def add_on_changed(path: str, callback: OnChangedCallback):
 def get_dir_iterator(path: str,
                      method: DirectoryIterationMethod = DirectoryIterationMethod.FileSystem,
                      recursive: bool = False,
-                     filter_: Optional[str] = None
+                     filter_: str | None = None
                      ) -> DirectoryIterator:
     key: _DirectoryIteratorKey = path, method, recursive, filter_
 

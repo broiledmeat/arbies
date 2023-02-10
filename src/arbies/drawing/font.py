@@ -1,12 +1,8 @@
 from __future__ import annotations
 import os
 from PIL import ImageDraw, ImageFont
-from typing import TYPE_CHECKING, Union, Optional, Tuple, List, Dict
-from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
-
-if TYPE_CHECKING:
-    from . import Vector2Type, ColorType
-    from ..manager import ConfigDict
+from arbies.drawing import Vector2Type, ColorType, HorizontalAlignment, VerticalAlignment, get_aligned_position
+from arbies.manager import ConfigDict
 
 
 class Font(ImageFont.FreeTypeFont):
@@ -15,7 +11,7 @@ class Font(ImageFont.FreeTypeFont):
     _default_size: int = 14
     _default_line_height: float = 1.2
 
-    def __init__(self, path: Union[str, bytes], size: int = _default_size, line_height: float = _default_line_height):
+    def __init__(self, path: str | bytes, size: int = _default_size, line_height: float = _default_line_height):
         super().__init__(font=path, size=size)
         self.line_height: float = line_height
 
@@ -47,10 +43,10 @@ class Font(ImageFont.FreeTypeFont):
         return font
 
 
-AnyFontType = Union[ImageFont.ImageFont, ImageFont.FreeTypeFont, Font]
+AnyFontType = ImageFont.ImageFont | ImageFont.FreeTypeFont | Font
 
-_default_font: Optional[Font] = None
-_font_cache: Dict[str, Font] = {}
+_default_font: Font | None = None
+_font_cache: dict[str, Font] = {}
 
 
 def _get_default_font() -> Font:
@@ -63,7 +59,7 @@ def _get_default_font() -> Font:
     return _default_font
 
 
-def get_font(name: Optional[str] = None, size: Optional[int] = None) -> Font:
+def get_font(name: str | None = None, size: int | None = None) -> Font:
     font: Font
 
     if name is not None:
@@ -95,7 +91,7 @@ def aligned_text(draw: ImageDraw.ImageDraw,
                  text: str,
                  fill: ColorType,
                  area: Vector2Type,
-                 offset: Optional[Vector2Type] = None,
+                 offset: Vector2Type | None = None,
                  horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
                  vertical_alignment: VerticalAlignment = VerticalAlignment.TOP):
     size = draw.textsize(text, font=font)
@@ -113,16 +109,16 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
                          text: str,
                          fill: ColorType,
                          area: Vector2Type,
-                         offset: Optional[Vector2Type] = None,
+                         offset: Vector2Type | None = None,
                          horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
                          vertical_alignment: VerticalAlignment = VerticalAlignment.TOP):
     line_height = get_line_height(font)
-    sections: List[Tuple[str, Vector2Type]] = []
+    sections: list[tuple[str, Vector2Type]] = []
     section: str = ''
     section_size: Vector2Type = (0, 0)
 
     i: int = 0
-    tokens: List[str] = text.split()
+    tokens: list[str] = text.split()
     while i < len(tokens):
         token = tokens[i]
 

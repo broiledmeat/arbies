@@ -1,9 +1,7 @@
 from __future__ import annotations
 from PIL import Image
-from typing import Optional
-from arbies import drawing
-from arbies.drawing import HorizontalAlignment, VerticalAlignment
-from arbies.manager import Manager, ConfigDict
+from arbies.drawing import HorizontalAlignment, VerticalAlignment, draw_image
+from arbies.manager import Manager
 from arbies.suppliers.filesystem import DirectoryIterator, DirectoryIterationMethod, get_dir_iterator
 from arbies.workers import LoopIntervalWorker
 
@@ -21,9 +19,9 @@ class SlideShowWorker(LoopIntervalWorker):
     async def _render_internal(self):
         path: str = next(self._path_iterator)
         image = Image.new('RGBA', self._size)
-        drawing.draw_image(image,
-                           Image.open(path),
-                           resize=True,
-                           horizontal_alignment=HorizontalAlignment.CENTER,
-                           vertical_alignment=VerticalAlignment.CENTER)
+        draw_image(image,
+                   Image.open(path),
+                   resize=True,
+                   horizontal_alignment=HorizontalAlignment.CENTER,
+                   vertical_alignment=VerticalAlignment.CENTER)
         return image

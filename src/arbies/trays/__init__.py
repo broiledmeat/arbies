@@ -4,11 +4,11 @@ from _collections import defaultdict
 from PIL import Image
 from arbies import import_module_class_from_fullname
 from arbies.drawing.geometry import Vector2, Box
-from arbies.manager import Manager, ConfigDict
-from typing import Type, Optional, Dict, List
+from arbies.manager import Manager
+from typing import Type
 
 
-_registered: Dict[str, str] = {
+_registered: dict[str, str] = {
     'file': 'arbies.trays.file.FileTray',
     'framebuffer': 'arbies.trays.framebuffer.FramebufferTray',
     'tk': 'arbies.trays.tk.TkTray',
@@ -17,12 +17,12 @@ _registered: Dict[str, str] = {
 }
 
 
-def get(name: str) -> Optional[Type]:
+def get(name: str) -> Type | None:
     return import_module_class_from_fullname(_registered[name.lower()])
 
 
 class Tray(ABC):
-    _instances: Dict[str, List[Tray]] = defaultdict(list)
+    _instances: dict[str, list[Tray]] = defaultdict(list)
 
     def __init__(self, manager: Manager, **kwargs):
         name = self.__class__.__name__
@@ -45,7 +45,7 @@ class Tray(ABC):
     async def shutdown(self):
         pass
 
-    async def serve(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+    async def serve(self, image: Image.Image, updated_boxes: list[Box] | None = None):
         if self._size != image.size:
             if updated_boxes is not None:
                 scale = (self._size[0] / image.size[0], self._size[1] / image.size[1])
@@ -55,5 +55,5 @@ class Tray(ABC):
             image = image.resize(self._size)
         await self._serve_internal(image, updated_boxes)
 
-    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None) -> Image.Image:
+    async def _serve_internal(self, image: Image.Image, updated_boxes: list[Box] | None = None):
         raise NotImplemented

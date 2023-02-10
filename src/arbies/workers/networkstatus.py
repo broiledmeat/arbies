@@ -1,9 +1,8 @@
 from __future__ import annotations
 from pathlib import Path
 from PIL import Image
-from typing import Optional
-from arbies import drawing
-from arbies.manager import Manager, ConfigDict
+from arbies.drawing import get_icon
+from arbies.manager import Manager
 from arbies.workers import Worker
 
 
@@ -22,6 +21,6 @@ class NetworkStatusWorker(Worker):
         if state_path.is_file() and state_path.read_bytes() == b'up\n':
             icon_name = 'wifi'
 
-        image.paste(drawing.get_icon(icon_name, tuple(self._size)))
+        image.paste(get_icon(icon_name, tuple(self._size)))
 
         return image

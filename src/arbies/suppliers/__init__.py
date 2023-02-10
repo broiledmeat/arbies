@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC
-from arbies.manager import Manager, ConfigDict
+from arbies.manager import Manager
 
 
 class Supplier(ABC):

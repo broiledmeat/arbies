@@ -7,17 +7,16 @@ import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from PIL import Image, ImageDraw
-from arbies.drawing.geometry import Vector2
-from typing import TYPE_CHECKING, Type, Optional, Union
+from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
-    from arbies.drawing.geometry import Box
+    from arbies.drawing.geometry import Vector2, Box
     from arbies.drawing import ColorType
     from arbies.suppliers import Supplier
     from arbies.trays import Tray
     from arbies.workers import Worker
 
-ConfigDict = dict[str, Union[str, int, float, list, 'ConfigDict']]
+ConfigDict = dict[str, str | int | float | list, 'ConfigDict']
 
 
 class Manager:
@@ -62,7 +61,7 @@ class Manager:
         await asyncio.gather(*(worker.render_once() for worker in self.workers))
 
         for worker in self.workers:
-            worker_image: Optional[Image.Image] = self._worker_images.get(worker, None)
+            worker_image: Image.Image | None = self._worker_images.get(worker, None)
             if worker_image is not None:
                 self._composite_image(worker_image, self.image, worker.box)
 
@@ -95,7 +94,7 @@ class Manager:
 
                 self._clear(self.image)
                 for worker in self.workers:
-                    worker_image: Optional[Image.Image] = self._worker_images.get(worker, None)
+                    worker_image: Image.Image | None = self._worker_images.get(worker, None)
                     if worker_image is not None:
                         self._composite_image(worker_image, self.image, worker.box)
 

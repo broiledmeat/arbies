@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Optional
 from PIL import Image
+from arbies.drawing.geometry import Box
 from arbies.manager import Manager, ConfigDict
-from .. import Tray
-from .device import Device, DeviceConfig
+from arbies.trays import Tray
+from arbies.trays.waveshareepd.device import Device, DeviceConfig
 
 
 class WaveShareEPDTray(Tray):
@@ -26,6 +26,6 @@ class WaveShareEPDTray(Tray):
     def clear(self):
         self._device.try_locked(self._device.clear)
 
-    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+    async def _serve_internal(self, image: Image.Image, updated_boxes: list[Box] | None = None):
         self._image = image
         self._device.try_locked(lambda: self._device.display(self._image))

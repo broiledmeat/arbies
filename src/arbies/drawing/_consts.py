@@ -1,16 +1,14 @@
 from __future__ import annotations
 from enum import Enum
-from typing import TYPE_CHECKING, Union, Tuple
 
 
-if TYPE_CHECKING:
-    Vector2Type = Tuple[float, float]
-    ColorType = Union[str, int, tuple[int, int, int, int]]
+Vector2Type = tuple[float, float]
+ColorType = str | tuple[int, int, int] | tuple[int, int, int, int]
 
 
 class _ConvertFromEnumMixin:
     @classmethod
-    def convert_from(cls, value: Union[_ConvertFromEnumMixin, int, str]) -> _ConvertFromEnumMixin:
+    def convert_from(cls, value: _ConvertFromEnumMixin | int | str) -> _ConvertFromEnumMixin:
         if isinstance(value, _ConvertFromEnumMixin):
             return value
         if isinstance(value, int):

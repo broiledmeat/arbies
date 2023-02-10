@@ -1,11 +1,10 @@
 from __future__ import annotations
 from PIL import Image, ImageDraw
-from typing import Optional
-from arbies.manager import Manager, ConfigDict
-from arbies.workers import LoopIntervalWorker
-from arbies.suppliers import datetime_ as adt
-from arbies import drawing
 from arbies.drawing import HorizontalAlignment, VerticalAlignment
+from arbies.drawing.font import aligned_text
+from arbies.manager import Manager
+from arbies.suppliers import datetime_ as adt
+from arbies.workers import LoopIntervalWorker
 
 
 class DateTimeWorker(LoopIntervalWorker):
@@ -22,14 +21,12 @@ class DateTimeWorker(LoopIntervalWorker):
         now = adt.now_tz()
         text = now.strftime(self._format) if self._format is not None else str(now)
 
-        self._last_text = text
-
         image = Image.new('RGBA', self._size, 1)
         draw = ImageDraw.Draw(image)
 
-        drawing.aligned_text(draw, self._font, text, self._font_fill, self._size,
-                             horizontal_alignment=self._horizontal_alignment,
-                             vertical_alignment=self._vertical_alignment)
+        aligned_text(draw, self._font, text, self.font_fill, self.size,
+                     horizontal_alignment=self._horizontal_alignment,
+                     vertical_alignment=self._vertical_alignment)
 
         del draw
 

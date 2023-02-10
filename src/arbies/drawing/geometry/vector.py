@@ -3,10 +3,10 @@ from typing import Union
 
 
 class Vector2(tuple):
-    def __init__(self, x: Union[int, Vector2] = 0, y: int = 0):
+    def __init__(self, x: int | Vector2 = 0, y: int = 0):
         pass
 
-    def __new__(cls, x: Union[int, Vector2] = 0, y: int = 0):
+    def __new__(cls, x: int | Vector2 = 0, y: int = 0):
         if isinstance(x, (tuple, list)):
             return super().__new__(cls, x)
         else:
@@ -26,14 +26,14 @@ class Vector2(tuple):
 
 class Vector4(tuple):
     def __init__(self,
-                 x: Union[int, Vector2] = 0,
+                 x: int | Vector2 | None = 0,
                  y: int = 0,
                  w: int = 0,
                  z: int = 0):
         pass
 
     def __new__(cls,
-                x: Union[int, Vector4] = 0,
+                x: int | Vector4 = 0,
                 y: int = 0,
                 w: int = 0,
                 z: int = 0):

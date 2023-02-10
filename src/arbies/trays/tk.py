@@ -2,20 +2,17 @@ from __future__ import annotations
 import asyncio
 import tkinter
 from PIL import Image, ImageTk
-from . import Tray
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    from arbies.drawing.geometry import Box
-    from arbies.manager import Manager
+from arbies.drawing.geometry import Box
+from arbies.manager import Manager
+from arbies.trays import Tray
 
 
 class TkTray(Tray):
     def __init__(self, manager: Manager, **kwargs):
         super().__init__(manager, **kwargs)
 
-        self._window: Optional[tkinter.Tk] = None
-        self._canvas: Optional[tkinter.Canvas] = None
+        self._window: tkinter.Tk | None = None
+        self._canvas: tkinter.Canvas | None = None
 
     async def startup(self):
         self._window = tkinter.Tk()
@@ -28,7 +25,7 @@ class TkTray(Tray):
         await asyncio.sleep(5)
         self._window.destroy()
 
-    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+    async def _serve_internal(self, image: Image.Image, updated_boxes: list[Box] | None = None):
         tk_image = ImageTk.PhotoImage(image)
         self._canvas.create_image(0, 0, image=tk_image, anchor=tkinter.NW)
         self._window.update()

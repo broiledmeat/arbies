@@ -5,13 +5,11 @@ from collections import defaultdict
 import traceback
 from PIL import Image, ImageDraw
 from arbies import import_module_class_from_fullname
-from arbies.drawing import Font, get_font, as_color
+from arbies.drawing import ColorType, as_color
+from arbies.drawing.font import Font, get_font
 from arbies.drawing.geometry import Vector2, Box
-from arbies.manager import Manager, ConfigDict
-from typing import TYPE_CHECKING, Type, Optional
-
-if TYPE_CHECKING:
-    from arbies.drawing import ColorType
+from arbies.manager import Manager
+from typing import Type
 
 _registered: dict[str, str] = {
     'datetime': 'arbies.workers.datetime_.DateTimeWorker',
@@ -23,7 +21,7 @@ _registered: dict[str, str] = {
 }
 
 
-def get(name: str) -> Optional[Type]:
+def get(name: str) -> Type | None:
     return import_module_class_from_fullname(_registered[name.lower()])
 
 

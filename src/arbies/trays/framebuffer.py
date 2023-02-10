@@ -1,9 +1,8 @@
 from __future__ import annotations
 from PIL import Image
-from arbies.drawing.geometry import Vector2, Box
-from arbies.manager import Manager, ConfigDict
-from . import Tray
-from typing import TYPE_CHECKING, Optional
+from arbies.drawing.geometry import Box
+from arbies.manager import Manager
+from arbies.trays import Tray
 
 
 class FramebufferTray(Tray):
@@ -14,8 +13,7 @@ class FramebufferTray(Tray):
         path: str = kwargs.get('Path', '/dev/fb0')
         self._path: str = manager.resolve_path(path)
 
-
-    async def _serve_internal(self, image: Image.Image, updated_boxes: Optional[list[Box]] = None):
+    async def _serve_internal(self, image: Image.Image, updated_boxes: list[Box] | None = None):
         self._manager.log.info(f'Writing to {self._path} {self.size}')
         fb_data = image.tobytes('raw', self._mode)
         with open(self._path, 'wb') as fb:

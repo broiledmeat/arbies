@@ -1,9 +1,7 @@
 from __future__ import annotations
 from PIL import Image
-from typing import Optional
-from arbies import drawing
-from arbies.drawing import HorizontalAlignment, VerticalAlignment
-from arbies.manager import Manager, ConfigDict
+from arbies.drawing import HorizontalAlignment, VerticalAlignment, draw_image
+from arbies.manager import Manager
 from arbies.workers import Worker
 
 
@@ -16,9 +14,9 @@ class ImageWorker(Worker):
 
     async def _render_internal(self) -> Image.Image:
         image = Image.new('RGBA', self._size)
-        drawing.draw_image(image,
-                           Image.open(self._path),
-                           resize=True,
-                           horizontal_alignment=HorizontalAlignment.CENTER,
-                           vertical_alignment=VerticalAlignment.CENTER)
+        draw_image(image,
+                   Image.open(self._path),
+                   resize=True,
+                   horizontal_alignment=HorizontalAlignment.CENTER,
+                   vertical_alignment=VerticalAlignment.CENTER)
         return image

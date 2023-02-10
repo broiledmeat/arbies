@@ -1,7 +1,7 @@
 # Adapted from work by sloum. https://tildegit.org/sloum/lid
 
 from PIL import Image, PyAccess
-from typing import Callable, Optional
+from typing import Callable
 
 _PixelsType = PyAccess.PyAccess
 _KernelType = Callable[[_PixelsType, _PixelsType, int, int], None]
@@ -55,7 +55,7 @@ def ordered_dither_9(source: Image.Image) -> Image.Image:
     return _run_kernel(source, kernel)
 
 
-def threshold_dither(source: Image.Image, threshold: Optional[int] = None) -> Image.Image:
+def threshold_dither(source: Image.Image, threshold: int | None = None) -> Image.Image:
     if threshold is None:
         pixels = list(source.convert('L').getdata())
         threshold = sum(pixels) // len(pixels)

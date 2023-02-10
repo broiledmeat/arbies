@@ -3,17 +3,13 @@ import os
 import io
 from PIL import Image, ImageColor
 import cairosvg
-from typing import TYPE_CHECKING, Callable, Optional, Iterable, Tuple, Dict
-from ._consts import HorizontalAlignment, VerticalAlignment, get_aligned_position
-from .font import Font, get_font, get_line_height, aligned_text, aligned_wrapped_text
+from arbies.drawing._consts import Vector2Type, ColorType, HorizontalAlignment, VerticalAlignment, get_aligned_position
+from typing import Callable, Iterable
 
-if TYPE_CHECKING:
-    from ._consts import Vector2Type, ColorType
-
-_icon_cache: Dict[Tuple[str, Vector2Type], Image.Image] = {}
+_icon_cache: dict[tuple[str, Vector2Type], Image.Image] = {}
 
 
-def get_icon(name: str, size: Optional[Vector2Type] = None) -> Image.Image:
+def get_icon(name: str, size: Vector2Type | None = None) -> Image.Image:
     size: Vector2Type = size or (32, 32)
     key = (name, size)
 
@@ -35,13 +31,13 @@ def get_icon(name: str, size: Optional[Vector2Type] = None) -> Image.Image:
 
 def draw_image(dest: Image.Image,
                source: Image.Image,
-               area: Optional[Vector2Type] = None,
-               offset: Optional[Vector2Type] = None,
+               area: Vector2Type | None = None,
+               offset: Vector2Type | None = None,
                resize: bool = False,
                horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
                vertical_alignment: VerticalAlignment = VerticalAlignment.TOP,
-               pre_processors: Optional[Iterable[Callable[[Image.Image], Image.Image]]] = None,
-               post_processors: Optional[Iterable[Callable[[Image.Image], Image.Image]]] = None):
+               pre_processors: Iterable[Callable[[Image.Image], Image.Image]] | None = None,
+               post_processors: Iterable[Callable[[Image.Image], Image.Image]] | None = None):
     area = area or dest.size
 
     for processor in (pre_processors or []):
