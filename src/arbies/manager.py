@@ -148,10 +148,9 @@ class Manager:
         await asyncio.gather(*(tray.shutdown() for tray in self.trays))
         await asyncio.gather(*(supplier.shutdown() for supplier in self.suppliers))
 
-    @staticmethod
-    def _clear(target: Image.Image):
+    def _clear(self, target: Image.Image):
         draw = ImageDraw.Draw(target)
-        draw.rectangle((0, 0, target.width, target.height), fill=(255, 255, 255, 255))
+        draw.rectangle((0, 0, target.width, target.height), fill=self._background_fill)
 
     @staticmethod
     def _paste_image(source: Image.Image, target: Image.Image, target_box: Box):
