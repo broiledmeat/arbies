@@ -7,7 +7,7 @@ import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from PIL import Image, ImageDraw
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Type, Union
 
 if TYPE_CHECKING:
     from arbies.drawing.geometry import Vector2, Box
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from arbies.trays import Tray
     from arbies.workers import Worker
 
-ConfigDict = dict[str, str | int | float | list, 'ConfigDict']
+ConfigDict = dict[str, Union[str, int, float, list, 'ConfigDict']]
 
 
 class Manager:
