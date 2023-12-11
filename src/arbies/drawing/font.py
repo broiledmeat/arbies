@@ -43,7 +43,7 @@ class Font(ImageFont.FreeTypeFont):
         return font
 
 
-AnyFontType = ImageFont.ImageFont | ImageFont.FreeTypeFont | Font
+type FontType = ImageFont.ImageFont | ImageFont.FreeTypeFont | Font
 
 _default_font: Font | None = None
 _font_cache: dict[str, Font] = {}
@@ -75,26 +75,30 @@ def get_font(name: str | None = None, size: int | None = None) -> Font:
     return font
 
 
-def get_line_height(font: AnyFontType) -> float:
+def get_line_height(font: FontType) -> float:
     if isinstance(font, Font):
         return font.getmetrics()[0] * font.line_height
     elif isinstance(font, ImageFont.FreeTypeFont):
         # noinspection PyProtectedMember
         return font.getmetrics()[0] * Font._default_line_height
     elif isinstance(font, ImageFont.ImageFont):
-        return font.getsize('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[1]
+        return get_text_size(font, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')[1]
     raise TypeError(font)
 
 
+def get_text_size(font: FontType, text: str) -> Vector2Type:
+    return font.getbbox(text)[2:]
+
+
 def aligned_text(draw: ImageDraw.ImageDraw,
-                 font: AnyFontType,
+                 font: FontType,
                  text: str,
                  fill: ColorType,
                  area: Vector2Type,
                  offset: Vector2Type | None = None,
                  horizontal_alignment: HorizontalAlignment = HorizontalAlignment.LEFT,
                  vertical_alignment: VerticalAlignment = VerticalAlignment.TOP):
-    size = draw.textsize(text, font=font)
+    size = get_text_size(font, text)
     x, y = get_aligned_position(size, area, horizontal_alignment, vertical_alignment)
 
     if offset is not None:
@@ -105,7 +109,7 @@ def aligned_text(draw: ImageDraw.ImageDraw,
 
 
 def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
-                         font: AnyFontType,
+                         font: FontType,
                          text: str,
                          fill: ColorType,
                          area: Vector2Type,
@@ -127,7 +131,7 @@ def aligned_wrapped_text(draw: ImageDraw.ImageDraw,
         else:
             check = section + ' ' + token
 
-        size = draw.textsize(check, font=font)
+        size = get_text_size(font, check)
 
         if len(section) > 0 and size[0] > area[0]:
             sections.append((section, section_size))

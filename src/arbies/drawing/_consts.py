@@ -2,8 +2,8 @@ from __future__ import annotations
 from enum import Enum
 
 
-Vector2Type = tuple[float, float]
-ColorType = str | tuple[int, int, int] | tuple[int, int, int, int]
+type Vector2Type = tuple[float, float]
+type ColorType = str | tuple[int, int, int] | tuple[int, int, int, int]
 
 
 class _ConvertFromEnumMixin:

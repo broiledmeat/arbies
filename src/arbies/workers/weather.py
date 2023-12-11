@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PIL import Image, ImageDraw
 from arbies.drawing import HorizontalAlignment, VerticalAlignment, get_icon
-from arbies.drawing.font import aligned_text, aligned_wrapped_text, get_line_height
+from arbies.drawing.font import aligned_text, aligned_wrapped_text, get_line_height, get_text_size
 from arbies.manager import Manager
 from arbies.suppliers.location import LocationSupplier, Location
 from arbies.suppliers.weather import WeatherSupplier, WeatherPeriod
@@ -24,7 +24,7 @@ async def _render_wind(worker: WeatherWorker, draw: ImageDraw.Draw, period: Weat
                      vertical_alignment=VerticalAlignment.CENTER)
         return
 
-    text_size = draw.textsize(text, font=worker.font)
+    text_size = get_text_size(worker.font, text)
     icon_size = (get_line_height(worker.font),) * 2
 
     icon_name = '-'.join(['arrow'] + [WeatherWorker._wind_direction_icon_map[token] for token in period.wind_direction])
