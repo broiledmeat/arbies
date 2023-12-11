@@ -1,10 +1,9 @@
-import asyncio
-from contextlib import asynccontextmanager
+import aiohttp
 from dataclasses import dataclass
 from datetime import datetime
 import json
 from string import Template
-import aiohttp
+from arbies.asyncutil import ContextLock
 from arbies.manager import Manager
 from arbies.suppliers import Supplier
 from arbies.suppliers.location import Coords
@@ -39,19 +38,18 @@ class WeatherSupplier(Supplier):
     def __init__(self, manager: Manager):
         super().__init__(manager)
 
-        self._cache_lock: asyncio.Lock = asyncio.Lock()
-        self._cache_locks: dict[Coords, asyncio.Lock] = {}
+        self._cache_locks = ContextLock()
         self._coords_grid_lookup: dict[Coords, GridCoords] = {}
         self._periods_cache: dict[GridCoords, tuple[datetime, WeatherPeriod]] = {}
 
     async def get_current(self, coords: Coords) -> WeatherPeriod:
-        from arbies.suppliers.datetime_ import now_tz
+        from arbies.suppliers.datetime_ import DateTimeSupplier
 
-        async with self._acquire_cache_lock(coords):
+        async with self._cache_locks.acquire(coords):
             if coords not in self._coords_grid_lookup:
                 self._coords_grid_lookup[coords] = await self._get_gps_grid(coords)
             grid = self._coords_grid_lookup[coords]
-            now = now_tz()
+            now = DateTimeSupplier.now_tz()
 
             if coords in self._periods_cache and \
                     (now - self._periods_cache[grid][0]).total_seconds() < self._cache_expire_time:
@@ -78,22 +76,6 @@ class WeatherSupplier(Supplier):
             self._periods_cache[grid] = (now, period)
 
         return period
-
-    @asynccontextmanager
-    async def _acquire_cache_lock(self, coords: Coords):
-        await self._cache_lock.acquire()
-
-        if coords not in self._cache_locks:
-            self._cache_locks[coords] = asyncio.Lock()
-        lock = self._cache_locks[coords]
-
-        self._cache_lock.release()
-
-        try:
-            await lock.acquire()
-            yield lock
-        finally:
-            lock.release()
 
     @staticmethod
     async def _get_gps_grid(coords: Coords) -> GridCoords:
@@ -137,5 +119,4 @@ class WeatherSupplier(Supplier):
                 long_forecast=period['detailedForecast'],
                 temperature=period['temperature'],
                 wind_direction=period['windDirection'],
-                wind_speed=wind_speed
-            )
+                wind_speed=wind_speed)

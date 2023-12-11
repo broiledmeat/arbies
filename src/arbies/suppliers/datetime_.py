@@ -1,7 +1,12 @@
+import aiohttp
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone, tzinfo
 import json
-import requests
+from string import Template
+from arbies.asyncutil import ContextLock
+from arbies.manager import Manager
+from arbies.suppliers import Supplier
+from arbies.suppliers.location import Coords
 
 
 @dataclass(frozen=True)
@@ -11,31 +16,54 @@ class SunPositionInfo:
     sunset: datetime
     solar_noon: datetime
 
+    def as_tz(self, tz: tzinfo | None):
+        return SunPositionInfo(
+            day_length=self.day_length,
+            sunrise=self.sunrise.astimezone(tz),
+            sunset=self.sunset.astimezone(tz),
+            solar_noon=self.solar_noon.astimezone(tz))
 
-_sunrise_uri: str = 'http://api.sunrise-sunset.org/json?lat={}&lng={}&formatted=0'
-_solar_day_info_cache: dict[tuple[float, float], tuple[datetime, SunPositionInfo]] = {}
 
+class DateTimeSupplier(Supplier):
+    _cache_expire_time: int = 30 * 60
+    _sunrise_uri: Template = Template('https://api.sunrise-sunset.org/json?lat=$latitude&lng=$longitude&formatted=0')
 
-def now_tz(tz: tzinfo | None = None) -> datetime:
-    return datetime.now(timezone.utc).astimezone(tz=tz)
+    def __init__(self, manager: Manager):
+        super().__init__(manager)
 
+        self._cache_locks = ContextLock()
+        self._solar_day_info_cache: dict[Coords, tuple[datetime, SunPositionInfo]] = {}
 
-def get_sun_position_info(coords: tuple[float, float]) -> SunPositionInfo:
-    now = now_tz()
+    @staticmethod
+    def now_tz(tz: tzinfo | None = None) -> datetime:
+        return datetime.now(timezone.utc).astimezone(tz=tz)
 
-    if coords in _solar_day_info_cache and now.date() == _solar_day_info_cache[coords][0].date():
-        return _solar_day_info_cache[coords][1]
+    async def get_sun_position_info(self, time: datetime, coords: Coords, tz: tzinfo | None = None) -> SunPositionInfo:
+        async with self._cache_locks.acquire(coords):
+            sun_info: SunPositionInfo
 
-    response = requests.get(_sunrise_uri.format(*coords))
-    data = json.loads(response.content)['results']
+            if coords not in self._solar_day_info_cache or time.date() != self._solar_day_info_cache[coords][0].date():
+                sun_info = await self._get_sun_position_info(coords)
+                self._solar_day_info_cache[coords] = (time, sun_info)
+            else:
+                sun_info = self._solar_day_info_cache[coords][1]
 
-    solar_info = SunPositionInfo(
-        day_length=timedelta(seconds=data['day_length']),
-        sunrise=datetime.fromisoformat(data['sunrise']),
-        sunset=datetime.fromisoformat(data['sunset']),
-        solar_noon=datetime.fromisoformat(data['solar_noon'])
-    )
+            return sun_info.as_tz(tz)
 
-    _solar_day_info_cache[coords] = (now, solar_info)
+    @staticmethod
+    async def _get_sun_position_info(coords: Coords) -> SunPositionInfo:
+        uri = DateTimeSupplier._sunrise_uri.substitute(latitude=coords.latitude, longitude=coords.longitude)
+        async with aiohttp.ClientSession() as session, session.get(uri) as response:
+            if response.status != 200:
+                raise IOError(f'Weather service returned {response.status}: {response.content}')
 
-    return solar_info
+            try:
+                data = json.loads(await response.text())['results']
+            except json.JSONDecodeError:
+                raise ValueError(f'DateTime service returned unparseable response: {response.content}')
+
+            return SunPositionInfo(
+                day_length=timedelta(seconds=data['day_length']),
+                sunrise=datetime.fromisoformat(data['sunrise']),
+                sunset=datetime.fromisoformat(data['sunset']),
+                solar_noon=datetime.fromisoformat(data['solar_noon']))
