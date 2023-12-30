@@ -97,13 +97,14 @@ class WeatherSupplier(Supplier):
     async def _get_current_raw_period(uri_template: Template, grid: GridCoords) -> WeatherPeriod:
         uri = uri_template.substitute(office=grid.office, gridx=grid.x, gridy=grid.y)
         async with aiohttp.ClientSession() as session, session.get(uri) as response:
+            content = await response.text()
             if response.status != 200:
-                raise IOError(f'Weather service returned {response.status}: {response.content}')
+                raise IOError(f'Weather service returned {response.status}: {content}')
 
             try:
-                data = json.loads(await response.text())
+                data = json.loads(content)
             except json.JSONDecodeError:
-                raise ValueError(f'Weather service returned unparseable response: {response.content}')
+                raise ValueError(f'Weather service returned unparseable response: {content}')
 
             period = data['properties']['periods'][0]
 
