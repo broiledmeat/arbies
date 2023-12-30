@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import os
 import asyncio
+from asyncio.exceptions import CancelledError
 from datetime import datetime
 import logging
 from logging import StreamHandler
@@ -144,9 +145,12 @@ class Manager:
         await asyncio.gather(*(worker.startup() for worker in self.workers))
 
     async def _shutdown(self):
-        await asyncio.gather(*(worker.shutdown() for worker in self.workers))
-        await asyncio.gather(*(tray.shutdown() for tray in self.trays))
-        await asyncio.gather(*(supplier.shutdown() for supplier in self.suppliers))
+        try:
+            await asyncio.gather(*(worker.shutdown() for worker in self.workers))
+            await asyncio.gather(*(tray.shutdown() for tray in self.trays))
+            await asyncio.gather(*(supplier.shutdown() for supplier in self.suppliers))
+        except CancelledError:
+            pass
 
     def _clear(self, target: Image.Image):
         draw = ImageDraw.Draw(target)
