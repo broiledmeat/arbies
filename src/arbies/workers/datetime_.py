@@ -5,6 +5,7 @@ from arbies.drawing.font import aligned_text
 from arbies.manager import Manager
 from arbies.suppliers.datetime_ import DateTimeSupplier
 from arbies.suppliers.location import LocationSupplier, Location
+from arbies.suppliers.solar import SolarSupplier
 from arbies.workers import LoopIntervalWorker
 from typing import Callable
 
@@ -21,9 +22,9 @@ async def _render_datetime(worker: DateTimeWorker,
 
 async def _render_sunrise(worker: DateTimeWorker,
                           draw: ImageDraw.Draw,
-                          supplier: DateTimeSupplier,
+                          supplier: SolarSupplier,
                           location: Location | None):
-    sun_info = await supplier.get_sun_position_info(supplier.now_tz(), location.coords)
+    sun_info = await supplier.get_solar_info(supplier.now_tz(), location.coords)
     aligned_text(draw, worker.font, sun_info.sunrise.strftime(worker.format), worker.font_fill, worker.size,
                  horizontal_alignment=HorizontalAlignment.CENTER,
                  vertical_alignment=VerticalAlignment.CENTER)
@@ -31,9 +32,9 @@ async def _render_sunrise(worker: DateTimeWorker,
 
 async def _render_sunset(worker: DateTimeWorker,
                          draw: ImageDraw.Draw,
-                         supplier: DateTimeSupplier,
+                         supplier: SolarSupplier,
                          location: Location | None):
-    sun_info = await supplier.get_sun_position_info(supplier.now_tz(), location.coords)
+    sun_info = await supplier.get_solar_info(supplier.now_tz(), location.coords)
     aligned_text(draw, worker.font, sun_info.sunset.strftime(worker.format), worker.font_fill, worker.size,
                  horizontal_alignment=HorizontalAlignment.CENTER,
                  vertical_alignment=VerticalAlignment.CENTER)
