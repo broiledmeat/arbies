@@ -73,9 +73,18 @@ class Manager:
         for section_name, module, manager_list in (('Trays', trays, self.trays),
                                                    ('Workers', workers, self.workers)):
             # noinspection PyTypeChecker
-            item_configs: list[ConfigDict] = kwargs.get(section_name, {}).values()
-            for item_config in item_configs:
-                class_ = module.get(item_config['Type'])
+            item_configs: dict[str, ConfigDict] = kwargs.get(section_name, {})
+            for item_name, item_config in item_configs.items():
+                item_type = item_config.get('Type', None)
+
+                if item_type is None:
+                    raise KeyError(f"{section_name}.{item_name} has no Type parameter")
+
+                class_ = module.get(item_type)
+
+                if class_ is None:
+                    raise KeyError(f"{section_name}.{item_name} has an unloadable Type parameter '{item_type}'")
+
                 instance = class_(self, **item_config)
                 manager_list.append(instance)
 

@@ -22,7 +22,12 @@ _registered: dict[str, str] = {
 
 
 def get(name: str) -> Type | None:
-    return import_module_class_from_fullname(_registered[name.lower()])
+    type_path = _registered.get(name.lower(), None)
+
+    if type_path is None:
+        return None
+
+    return import_module_class_from_fullname(type_path)
 
 
 class Worker(ABC):
