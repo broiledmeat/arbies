@@ -11,7 +11,6 @@ from PIL import Image, ImageDraw
 from typing import TYPE_CHECKING, Type, Union
 
 if TYPE_CHECKING:
-    from asyncio.tasks import Task
     from arbies.drawing.geometry import Vector2, Box
     from arbies.drawing import ColorType
     from arbies.suppliers import Supplier
@@ -30,7 +29,7 @@ class Manager:
 
         global_config: ConfigDict = kwargs.get('Global', {})
 
-        self._render_task: Task | None = None
+        self._render_task: asyncio.Task | None = None
 
         # Rendering
         self._size: Vector2 = Vector2(global_config.get('Size', (640, 384)))
@@ -124,15 +123,17 @@ class Manager:
         if self._render_task is not None:
             raise Exception('Manager is already rendering.')
 
-        async def _update_workers(image):
+        async def _render_workers():
             await self._worker_update_lock.acquire()
 
             try:
                 updated_workers: list[Worker] = list(self._updated_workers)
                 updated_boxes: list[Box] = [worker.box for worker in self._updated_workers]
 
-                if len(updated_workers) > 0:
-                    self._updated_workers.clear()
+                if len(updated_workers) == 0:
+                    return
+
+                self._updated_workers.clear()
             finally:
                 self._worker_update_lock.release()
 
@@ -142,23 +143,22 @@ class Manager:
                 if worker_image is not None:
                     self._composite_image(worker_image, self.image, worker.box)
 
-            await asyncio.gather(*(tray.serve(image, updated_boxes) for tray in self.trays))
+            await asyncio.gather(*(tray.serve(self.image, updated_boxes) for tray in self.trays))
 
         async def _inner():
             await self._startup()
             worker_loops: tuple[asyncio.Task, ...] = tuple()
 
-            try:
-                manager_image = self.image
-                worker_loops = tuple(asyncio.create_task(worker.render_loop()) for worker in self.workers)
 
-                await _update_workers(manager_image)
+
+            try:
+                worker_loops = tuple(asyncio.create_task(worker.render_loop()) for worker in self.workers)
 
                 while True:
                     # Wait until every HH:MM:??, where ?? is the seconds cleanly divisible by _render_loop_interval.
                     await asyncio.sleep(self._render_loop_interval -
                                         (datetime.now().second % self._render_loop_interval))
-                    await _update_workers(manager_image)
+                    await _render_workers()
             except asyncio.CancelledError:
                 pass
             finally:

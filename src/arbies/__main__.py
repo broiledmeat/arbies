@@ -2,7 +2,6 @@ import sys
 import os
 import argparse
 import asyncio
-from asyncio.exceptions import CancelledError
 import toml
 from arbies.manager import Manager
 
