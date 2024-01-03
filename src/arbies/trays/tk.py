@@ -16,7 +16,6 @@ class TkTray(Tray):
         self._canvas: tkinter.Canvas | None = None
         self._image = None
         self._loop_task: asyncio.Task | None = None
-        self._is_destroying: bool = False
 
     async def startup(self):
         self._window = tkinter.Tk()
@@ -27,7 +26,8 @@ class TkTray(Tray):
         self._loop_task = asyncio.create_task(self._update_loop())
 
     async def shutdown(self):
-        await self._loop_task
+        if self._loop_task is not None:
+            await self._loop_task
 
     async def _serve_internal(self, image: Image.Image, updated_boxes: list[Box] | None = None):
         self._image = ImageTk.PhotoImage(image)
@@ -35,14 +35,19 @@ class TkTray(Tray):
 
     async def _update_loop(self):
         try:
-            while not self._is_destroying:
+            while True:
                 self._window.update_idletasks()
                 self._window.update()
                 await asyncio.sleep(0.2)
         except CancelledError:
             pass
-        self._window.destroy()
+        finally:
+            self._canvas.destroy()
+            self._window.destroy()
+            del self._image
+            self._loop_task = None
 
     def _key_press(self, event):
         if event.keysym == 'Escape' or event.keysym == 'space':
-            self._is_destroying = True
+            self._loop_task.cancel()
+            asyncio.create_task(self._manager.shutdown())

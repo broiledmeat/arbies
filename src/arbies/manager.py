@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw
 from typing import TYPE_CHECKING, Type, Union
 
 if TYPE_CHECKING:
+    from asyncio.tasks import Task
     from arbies.drawing.geometry import Vector2, Box
     from arbies.drawing import ColorType
     from arbies.suppliers import Supplier
@@ -28,6 +29,8 @@ class Manager:
         from arbies.drawing.geometry import Vector2
 
         global_config: ConfigDict = kwargs.get('Global', {})
+
+        self._render_task: Task | None = None
 
         # Rendering
         self._size: Vector2 = Vector2(global_config.get('Size', (640, 384)))
@@ -99,65 +102,87 @@ class Manager:
         return self._image
 
     async def render_once(self):
-        await self._startup()
-        await asyncio.gather(*(worker.render_once() for worker in self.workers))
+        if self._render_task is not None:
+            raise Exception('Manager is already rendering.')
 
-        for worker in self.workers:
-            worker_image: Image.Image | None = self._worker_images.get(worker, None)
-            if worker_image is not None:
-                self._composite_image(worker_image, self.image, worker.box)
+        async def _inner():
+            await self._startup()
+            await asyncio.gather(*(worker.render_once() for worker in self.workers))
 
-        await asyncio.gather(*(tray.serve(self._image) for tray in self.trays))
-        await self._shutdown()
+            for worker in self.workers:
+                worker_image: Image.Image | None = self._worker_images.get(worker, None)
+                if worker_image is not None:
+                    self._composite_image(worker_image, self.image, worker.box)
+
+            await asyncio.gather(*(tray.serve(self._image) for tray in self.trays))
+            await self.shutdown()
+
+        self._render_task = asyncio.create_task(_inner())
+        return self._render_task
 
     async def render_loop(self):
-        await self._startup()
-        worker_loops: tuple[asyncio.Task, ...] = tuple()
+        if self._render_task is not None:
+            raise Exception('Manager is already rendering.')
 
-        try:
-            manager_image = self.image
-            worker_loops = tuple(asyncio.create_task(worker.render_loop()) for worker in self.workers)
+        async def _update_workers(image):
+            await self._worker_update_lock.acquire()
 
-            while True:
-                # Wait until every HH:MM:??, where ?? is the seconds cleanly divisible by _render_loop_interval.
-                await asyncio.sleep(self._render_loop_interval - (datetime.now().second % self._render_loop_interval))
-                await self._worker_update_lock.acquire()
+            try:
+                updated_workers: list[Worker] = list(self._updated_workers)
+                updated_boxes: list[Box] = [worker.box for worker in self._updated_workers]
 
-                try:
-                    updated_workers: list[Worker] = list(self._updated_workers)
-                    updated_boxes: list[Box] = [worker.box for worker in self._updated_workers]
-
-                    if len(updated_workers) == 0:
-                        continue
-
+                if len(updated_workers) > 0:
                     self._updated_workers.clear()
-                finally:
-                    self._worker_update_lock.release()
+            finally:
+                self._worker_update_lock.release()
 
-                self._clear(self.image)
-                for worker in self.workers:
-                    worker_image: Image.Image | None = self._worker_images.get(worker, None)
-                    if worker_image is not None:
-                        self._composite_image(worker_image, self.image, worker.box)
+            self._clear(self.image)
+            for worker in self.workers:
+                worker_image: Image.Image | None = self._worker_images.get(worker, None)
+                if worker_image is not None:
+                    self._composite_image(worker_image, self.image, worker.box)
 
-                await asyncio.gather(*(tray.serve(manager_image, updated_boxes) for tray in self.trays))
-        except asyncio.CancelledError:
-            pass
-        finally:
-            for worker_loop in worker_loops:
-                worker_loop.cancel()
-            await asyncio.gather(*worker_loops)
-            await self._shutdown()
+            await asyncio.gather(*(tray.serve(image, updated_boxes) for tray in self.trays))
+
+        async def _inner():
+            await self._startup()
+            worker_loops: tuple[asyncio.Task, ...] = tuple()
+
+            try:
+                manager_image = self.image
+                worker_loops = tuple(asyncio.create_task(worker.render_loop()) for worker in self.workers)
+
+                await _update_workers(manager_image)
+
+                while True:
+                    # Wait until every HH:MM:??, where ?? is the seconds cleanly divisible by _render_loop_interval.
+                    await asyncio.sleep(self._render_loop_interval -
+                                        (datetime.now().second % self._render_loop_interval))
+                    await _update_workers(manager_image)
+            except asyncio.CancelledError:
+                pass
+            finally:
+                for worker_loop in worker_loops:
+                    worker_loop.cancel()
+                await asyncio.gather(*worker_loops)
+                await self.shutdown()
+
+        self._render_task = asyncio.create_task(_inner())
+        return self._render_task
 
     async def _startup(self):
         await asyncio.gather(*(tray.startup() for tray in self.trays))
         await asyncio.gather(*(worker.startup() for worker in self.workers))
 
-    async def _shutdown(self):
+    async def shutdown(self):
         try:
             await asyncio.gather(*(worker.shutdown() for worker in self.workers))
             await asyncio.gather(*(tray.shutdown() for tray in self.trays))
             await asyncio.gather(*(supplier.shutdown() for supplier in self.suppliers))
+
+            if self._render_task is not None:
+                self._render_task.cancel()
+            self._render_task = None
         except CancelledError:
             pass
 

@@ -2,9 +2,9 @@ import sys
 import os
 import argparse
 import asyncio
+from asyncio.exceptions import CancelledError
 import toml
 from arbies.manager import Manager
-from typing import Optional
 
 
 async def main() -> int:
@@ -26,25 +26,14 @@ async def main() -> int:
         return 1
 
     manager = _get_manager(config_path)
-    func: Optional = None
 
-    if args.command == 'once':
-        func = manager.render_once
-    elif args.command == 'loop':
-        func = manager.render_loop
-
-    if func is not None:
-        task = asyncio.create_task(func())
-        try:
-            await task
-        except KeyboardInterrupt:
-            task.cancel()
-            await task
+    await manager.render_loop() if args.command == 'loop' else manager.render_once()
+    await manager.shutdown()
 
     return 0
 
 
-def _get_manager(config_path) -> Optional[Manager]:
+def _get_manager(config_path) -> Manager | None:
     with open(config_path, 'r') as config_file:
         return Manager(**toml.load(config_file))
 
