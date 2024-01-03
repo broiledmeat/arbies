@@ -116,24 +116,23 @@ class LoopIntervalWorker(Worker):
     def __init__(self, manager: Manager, **kwargs):
         super().__init__(manager, **kwargs)
 
-        self._on_start: bool = bool(kwargs.get('OnStart', True))
         self._cron_interval: str = kwargs.get('Interval', '*/1 * * * *')
 
     async def render_loop(self):
         from datetime import datetime
         from croniter import croniter
 
-        if self._on_start:
-            await self.render_once()
-
-        delay: int = 0
+        delay: float = 0.0
         time_next: datetime = datetime.now()
         time_iter: croniter = croniter(self._cron_interval, time_next)
+
         while True:
+            await self.render_once()
+
             now = datetime.now()
             while time_next <= now or delay <= 0:
                 time_next = time_iter.next(datetime)
-                delay = (time_next - now).seconds
+                delay = (time_next - now).total_seconds()
+
             self._manager.log.debug(f'Awaiting {self.label} until {time_next} ({delay} seconds)')
             await asyncio.sleep(delay)
-            await self.render_once()
