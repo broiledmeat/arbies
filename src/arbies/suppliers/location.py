@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from pytz import timezone
 from arbies.manager import Manager
 from arbies.suppliers import Supplier
 
@@ -13,6 +14,7 @@ class Coords:
 @dataclass(frozen=True)
 class Location:
     name: str
+    timezone: timezone
     coords: Coords
 
 
@@ -25,8 +27,9 @@ class LocationSupplier(Supplier):
 
     async def startup(self):
         for name, location_config in self.manager.config.get('Locations', {}).items():
+            timezone_ = timezone(location_config.get('Timezone'))
             coords = tuple(location_config.get('Coords'))
-            location = Location(name, Coords(float(coords[0]), float(coords[1])))
+            location = Location(name, timezone_, Coords(float(coords[0]), float(coords[1])))
             self._locations.add(location)
 
             if self._default_location is None:
